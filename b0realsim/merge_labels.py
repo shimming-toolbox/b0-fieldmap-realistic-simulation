@@ -67,13 +67,16 @@ def merge_labels(list_labels: List[Path], config_file=None) -> None:
     #    suffix = label_suffixes[idx]
     #    volume = set_labels(volume, labels, suffix, config=config_db)
 
-    volume = set_labels(volume,  volume_set[label_suffixes[0]], label_suffixes[0], config=config_db, anatomy=['body'] )
+    volume = set_labels(volume,  volume_set[label_suffixes[9]], label_suffixes[9], config=config_db)
     volume = set_labels(volume,  volume_set[label_suffixes[3]], label_suffixes[3], config=config_db)
     volume = set_labels(volume,  volume_set[label_suffixes[2]], label_suffixes[2], config=config_db)
+    volume = set_labels(volume,  volume_set[label_suffixes[6]], label_suffixes[6], config=config_db)
     volume = set_labels(volume,  volume_set[label_suffixes[1]], label_suffixes[1], config=config_db)
     volume = set_labels(volume,  volume_set[label_suffixes[0]], label_suffixes[0], config=config_db, anatomy=['lung left', 'lung right'] )
     volume = set_labels(volume,  volume_set[label_suffixes[4]], label_suffixes[4], config=config_db, anatomy=['skull'] )
-    volume = set_labels(volume,  volume_set[label_suffixes[0]], label_suffixes[0], config=config_db, anatomy=['sinus', 'ear canal', 'trachea'])
+    volume = set_labels(volume,  volume_set[label_suffixes[0]], label_suffixes[0], config=config_db, anatomy=['trachea'])
+    volume = set_labels(volume,  volume_set[label_suffixes[7]], label_suffixes[7], config=config_db)
+    volume = set_labels(volume,  volume_set[label_suffixes[8]], label_suffixes[8], config=config_db)
     volume = set_labels(volume,  volume_set[label_suffixes[5]], label_suffixes[5], config=config_db, anatomy=['eyes'] )
 
     save_volume(template_path, volume)
@@ -146,7 +149,7 @@ def save_volume(template_path: Path, volume) -> nib.nifti1.Nifti1Image:
     nifti = nib.load(template_path)
 
     new_volume = nib.Nifti1Image(volume.astype(np.int8), nifti.affine, nifti.header,  dtype=np.int8)
-    nib.save(new_volume,'foo.nii.gz')
+    nib.save(new_volume,'sub-amuAL_T1w_label-all.nii.gz')
     return None
 
 def get_label_suffix(nifti_path: Path) -> str:
@@ -199,7 +202,7 @@ def set_labels(volume, labels, suffix, config=None, anatomy=None) -> str:
     file_suffix : str
         The suffix of the BIDS label filename.
     """
-
+    breakpoint()
     file_db = config[config['source']==suffix]
 
     if anatomy is not None:
@@ -219,11 +222,16 @@ def main() -> None:
     air_tissue = Path("data/sub-amuAL_T1w_label-air_tissue.nii.gz")
     canal_seg = Path("data/sub-amuAL_T1w_label-canal_seg.nii.gz")
     spine_dseg = Path("data/sub-amuAL_T1w_label-spine_dseg.nii.gz")
-    brain_dseg = Path("data/sub-amuAL_T1w_label-brain_dseg.nii.gz")
+    #brain_dseg = Path("data/sub-amuAL_T1w_label-brain_dseg.nii.gz")
+    brainonly_dseg = Path("data/sub-amuAL_T1w_label-brainonly_merged.nii.gz")
+    skin_dseg = Path("data/sub-amuAL_T1w_label-skin.nii.gz")
     skull = Path("data/sub-amuAL_T1w_label-skull.nii.gz")
     eyes = Path("data/sub-amuAL_T1w_label-eyes.nii.gz")
+    sinus = Path("data/sub-amuAL_T1w_label-sinus.nii.gz")
+    earcanal = Path("data/sub-amuAL_T1w_label-earcanal.nii.gz")
+    body = Path("data/sub-amuAL_T1w_label-body.nii.gz")
 
-    list_labels = [air_tissue, canal_seg, spine_dseg, brain_dseg, skull, eyes]
+    list_labels = [air_tissue, canal_seg, spine_dseg, brainonly_dseg, skull, eyes, skin_dseg, sinus, earcanal, body]
 
     config = Path("config/whole-body-labels.tsv")
 
