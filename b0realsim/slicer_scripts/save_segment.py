@@ -6,13 +6,36 @@ import click
 @click.option('-m','--main_volume_path', required=True, help='Path to the main volume')
 @click.option('-s','--segmentation_path', required=True, help='Path to the SAMSEG segmentation')
 @click.option('-o','--output_path', required=True, help='Path to the output file')
-def save_skull(main_volume_path, segmentation_path, output_path):
+@click.option('-a','--anatomy', required=True, help='Anatomy label')
+def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     """
-
+    Save a specific segment from a segmentation file
     
+    Args:
+        main_volume_path: str, path to the main volume
+        segmentation_path: str, path to the segmentation file
+        output_path: str, path to the output file
+        anatomy: str, anatomy label
+
+    Returns:
+        None
+
     """
 
-    print("Starting the smoothing procedure...")
+    if anatomy == 'body':
+        segment_id = 'Segment_1'
+    elif anatomy == 'skull':
+        segment_id = 'Segment_165'
+    elif anatomy == 'sinus':
+        segment_id = 'Segment_2'
+    elif anatomy == 'brain':
+        segment_id = 'Segment_56'
+    elif anatomy == 'eyes':
+        segment_id = 'Segment_259'
+    elif anatomy == 'earcanal':
+        segment_id = 'Segment_3'
+    elif anatomy == 'skin':
+        segment_id = 'Segment_258'
 
     # Load the main volume and segmentation
     main_filename = main_volume_path.split('\\')[-1] # Get the filename from the path
@@ -42,10 +65,10 @@ def save_skull(main_volume_path, segmentation_path, output_path):
     segmentEditorWidget.setMasterVolumeNode(masterVolumeNode)
 
     # Define the segment to select
-    segmentEditorNode.SetSelectedSegmentID('Segment_3')
+    segmentEditorNode.SetSelectedSegmentID(segment_id)
 
     # List of segments to keep
-    segmentsToKeep = ['Segment_3'] # Sinus
+    segmentsToKeep = [segment_id] # Sinus
 
     segmentation = segmentation_node.GetSegmentation()
     # List to store segment IDs that need to be removed
@@ -75,4 +98,4 @@ def save_skull(main_volume_path, segmentation_path, output_path):
 
 
 if __name__ == '__main__':  
-    save_skull()  
+    save_segment()  
