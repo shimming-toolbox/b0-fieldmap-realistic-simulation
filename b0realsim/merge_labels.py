@@ -4,13 +4,11 @@ from typing import List
 import numpy.typing as npt
 
 import nibabel as nib
-from nibabel.affines import apply_affine
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
-def merge_labels(list_labels: List[Path], config_file=None) -> None:
+def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
     """
     Merges multiple tissue label volumes into a single volume, optionally remapping labels based on a configuration file.
 
@@ -53,10 +51,9 @@ def merge_labels(list_labels: List[Path], config_file=None) -> None:
     print("Loaded the volumes for all the following files:")
     print(*volume_set.keys(), ", ")
 
-    # Create new nifti volume
-    template_path = list_labels[
-        0
-    ]  # Assuming the first label file can be used as a template
+    # Create new nifti volume, assuming the first label file can be used as a template
+    template_path = list_labels[0]  
+
     volume_nifti = create_volume(template_path)
     volume = volume_nifti.get_fdata()
 
@@ -66,11 +63,10 @@ def merge_labels(list_labels: List[Path], config_file=None) -> None:
     else:
         config_db = None
 
-    # for idx, key in enumerate(volume_set):
-    #    labels = volume_set[key]
-    #    suffix = label_suffixes[idx]
-    #    volume = set_labels(volume, labels, suffix, config=config_db)
 
+    # Set labels using predefined order
+    # Order is set to: body, brain, spine, skin, canal, lungs, skull, trachea, sinus,
+    # earcanal, and then eyes.
     volume = set_labels(
         volume, volume_set[label_suffixes[9]], label_suffixes[9], config=config_db
     )
@@ -144,30 +140,13 @@ def load_volume(nifti_path: Path) -> npt.NDArray:
     nifti = nib.load(nifti_path)
 
     volume = nifti.get_fdata()
-    print(nib.orientations.aff2axcodes(nifti.affine))
-    if nifti_path == Path("data/sub-unfErssm010_T1w_label-canal_seg.nii.gz"):
-        # original_affine = nifti.affine
-        # target_affine = np.array([
-        # [-9.99812543e-01,  1.00949360e-16,  1.93620156e-02,  7.96067123e+01],
-        # [ 9.99812545e-17,  1.00000000e+00, -5.09681033e-17, -1.41025833e+02],
-        # [ 1.93620156e-02,  4.90227068e-17,  9.99812543e-01, -5.71042419e+02],
-        # [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]
-        # ])
-        # Compute the inverse of the original affine
-        # inverse_affine = np.linalg.inv(original_affine)
 
-        # Transform the volume to voxel space using the inverse affine
-        # voxel_space_volume = nib.affines.apply_affine(inverse_affine, volume)
-
-        # Transform the volume to the target affine space
-        # volume = nib.affines.apply_affine(target_affine, voxel_space_volume)
-        # volume = nib.affines.apply_affine(target_affine, voxel_space_volume)
-
+    # Flip volume if nifti orientation is inconsistent with other volumes
+    if 'R' in nib.orientations.aff2axcodes(nifti.affine):
         volume = volume[::-1, :, :]
 
     print("Volume loaded :" + str(nifti_path))
-    print("Affine is:")
-    print(nifti.affine)
+    
     return volume
 
 
@@ -186,7 +165,12 @@ def create_volume(template_path: Path) -> nib.nifti1.Nifti1Image:
         New NIfTI image with the same shape and affine as the template, but with all voxel values set to zero.
     """
 
-    nifti = nib.load(template_path)
+    try:
+        nifti = nib.load(template_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Template file not found: {template_path}")
+    except nib.filebasedimages.ImageFileError:
+        raise nib.filebasedimages.ImageFileError(f"Error loading NIfTI file: {template_path}")
 
     volume = nifti.get_fdata()
 
@@ -300,9 +284,11 @@ def set_labels(volume, labels, suffix, config=None, anatomy=None) -> str:
     return volume
 
 
-def main(t1w, flag=None, config=Path("config/whole-body-labels.tsv")) -> None:
+def main(bids_subject_dir=None, flag=None, config=Path("config/whole-body-labels.tsv")) -> None:
 
-    t1w = Path("data/sub-unfErssm010_T1w.nii.gz")
+    if bids_subject_dir is None:
+        t1w = Path("data/sub-unfErssm010_T1w.nii.gz")
+
     t1w_stem = Path(t1w.stem).stem
 
     air_tissue = Path("data/" + t1w_stem + "_label-air_tissue.nii.gz")
@@ -332,7 +318,7 @@ def main(t1w, flag=None, config=Path("config/whole-body-labels.tsv")) -> None:
         body,
     ]
 
-    merge_labels(list_labels, config)
+    merge_labels(list_labels, config, flag)
 
     return None
 

@@ -1,7 +1,7 @@
 import slicer
 import os
 import click
-
+from pathlib import Path
 
 @click.command()
 @click.option("-m", "--main_volume_path", required=True, help="Path to the main volume")
@@ -41,21 +41,21 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
         segment_id = "Segment_258"
 
     # Load the main volume and segmentation
-    main_filename = main_volume_path.split("\\")[-1]  # Get the filename from the path
+    main_filename = str(Path(main_volume_path).stem) + '.gz' # Get the filename from the path
 
     # Remove the extension to
-    main_filename_without_extension = main_filename.split(".")[0]
+    main_filename_without_extension = Path(Path(main_filename).stem).stem
 
-    print(f"Loading main volume from: {main_volume_path}")
-    slicer.util.loadVolume(main_volume_path)
+    print(f"Loading main volume from: {Path(main_volume_path).resolve()}")
+    slicer.util.loadVolume(Path(main_volume_path).resolve())
 
     print("Main volume loaded")
 
     masterVolumeNode = slicer.util.getNode(main_filename_without_extension)
     print("Main volume node obtained")
 
-    print(f"Loading segmentation from: {segmentation_path}")
-    segmentation_node = slicer.util.loadSegmentation(segmentation_path)
+    print(f"Loading segmentation from: {Path(segmentation_path).resolve()}")
+    segmentation_node = slicer.util.loadSegmentation(Path(segmentation_path).resolve())
     print("Segmentation loaded")
 
     # Create segment editor to get access to effects
@@ -65,9 +65,10 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
     segmentEditorWidget.setSegmentationNode(segmentation_node)
     segmentEditorWidget.setMasterVolumeNode(masterVolumeNode)
-
+    
     # Define the segment to select
     segmentEditorNode.SetSelectedSegmentID(segment_id)
+
 
     # List of segments to keep
     segmentsToKeep = [segment_id]  # Sinus
@@ -101,7 +102,8 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     slicer.modules.segmentations.logic().ExportVisibleSegmentsToLabelmapNode(
         segmentation_node, labelmapVolumeNode, masterVolumeNode
     )
-    slicer.util.saveNode(labelmapVolumeNode, output_path)
+
+    slicer.util.saveNode(labelmapVolumeNode, str(Path(output_path).resolve()))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 .DS_store
 data/
+bids/
 *.nii
 *.nii.gz
 *foo*

@@ -1,6 +1,7 @@
 import slicer
 import os
 import click
+from pathlib import Path
 
 
 @click.command()
@@ -46,25 +47,26 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         segment_id = "Segment_1"
     elif anatomy == "earcanal":
         segment_id = "Segment_1"
-
+    print(anatomy)
+    print(f"Segment ID: {segment_id}")
     print("Starting the smoothing procedure...")
 
     # Load the main volume and segmentation
-    main_filename = main_volume_path.split("\\")[-1]  # Get the filename from the path
+    main_filename = str(Path(main_volume_path).stem) + '.gz' # Get the filename from the path
 
     # Remove the extension to
-    main_filename_without_extension = main_filename.split(".")[0]
+    main_filename_without_extension = Path(Path(main_filename).stem).stem
 
-    print(f"Loading main volume from: {main_volume_path}")
-    slicer.util.loadVolume(main_volume_path)
+    print(f"Loading main volume from: {Path(main_volume_path).resolve()}")
+    slicer.util.loadVolume(Path(main_volume_path).resolve())
 
     print("Main volume loaded")
 
     masterVolumeNode = slicer.util.getNode(main_filename_without_extension)
     print("Main volume node obtained")
 
-    print(f"Loading segmentation from: {segmentation_path}")
-    segmentation_node = slicer.util.loadSegmentation(segmentation_path)
+    print(f"Loading segmentation from: {Path(segmentation_path).resolve()}")
+    segmentation_node = slicer.util.loadSegmentation(Path(segmentation_path).resolve())
     print("Segmentation loaded")
 
     # Create segment editor to get access to effects
@@ -155,7 +157,7 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
     slicer.modules.segmentations.logic().ExportVisibleSegmentsToLabelmapNode(
         segmentation_node, labelmapVolumeNode, masterVolumeNode
     )
-    slicer.util.saveNode(labelmapVolumeNode, output_path)
+    slicer.util.saveNode(labelmapVolumeNode, str(Path(output_path).resolve()))
 
 
 def grow(segmentEditorWidget, marginmm):
