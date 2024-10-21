@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 
 from typing import List
 import numpy.typing as npt
@@ -6,7 +7,7 @@ import numpy.typing as npt
 import nibabel as nib
 import numpy as np
 import pandas as pd
-
+import matplotlib as mpl
 
 def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
     """
@@ -36,8 +37,6 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
     for label_path in list_labels:
         label_suffixes.append(get_label_suffix(label_path))
 
-    label_prefix = get_label_prefix(label_path)
-
     print(str(num_files) + " files were provided.")
     print("The labels provided are: ")
     print(*label_suffixes, ", ")
@@ -63,61 +62,66 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
     else:
         config_db = None
 
+    if flag == "mergebrain":
+        print("Merging brain labels")
+        volume = set_labels(
+            volume, volume_set[label_suffixes[3]], label_suffixes[3], config=config_db
+        )
+    else:
+        # Set labels using predefined order
+        # Order is set to: body, brain, spine, skin, canal, lungs, skull, trachea, sinus,
+        # earcanal, and then eyes.
+        volume = set_labels(
+            volume, volume_set[label_suffixes[9]], label_suffixes[9], config=config_db
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[3]], label_suffixes[3], config=config_db, anatomy=["brain-merged"]
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[2]], label_suffixes[2], config=config_db
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[6]], label_suffixes[6], config=config_db
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[1]], label_suffixes[1], config=config_db
+        )
+        volume = set_labels(
+            volume,
+            volume_set[label_suffixes[0]],
+            label_suffixes[0],
+            config=config_db,
+            anatomy=["lung left", "lung right"],
+        )
+        volume = set_labels(
+            volume,
+            volume_set[label_suffixes[4]],
+            label_suffixes[4],
+            config=config_db,
+            anatomy=["skull"],
+        )
+        volume = set_labels(
+            volume,
+            volume_set[label_suffixes[0]],
+            label_suffixes[0],
+            config=config_db,
+            anatomy=["trachea"],
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[7]], label_suffixes[7], config=config_db
+        )
+        volume = set_labels(
+            volume, volume_set[label_suffixes[8]], label_suffixes[8], config=config_db
+        )
+        volume = set_labels(
+            volume,
+            volume_set[label_suffixes[5]],
+            label_suffixes[5],
+            config=config_db,
+            anatomy=["eyes"],
+        )
 
-    # Set labels using predefined order
-    # Order is set to: body, brain, spine, skin, canal, lungs, skull, trachea, sinus,
-    # earcanal, and then eyes.
-    volume = set_labels(
-        volume, volume_set[label_suffixes[9]], label_suffixes[9], config=config_db
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[3]], label_suffixes[3], config=config_db
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[2]], label_suffixes[2], config=config_db
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[6]], label_suffixes[6], config=config_db
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[1]], label_suffixes[1], config=config_db
-    )
-    volume = set_labels(
-        volume,
-        volume_set[label_suffixes[0]],
-        label_suffixes[0],
-        config=config_db,
-        anatomy=["lung left", "lung right"],
-    )
-    volume = set_labels(
-        volume,
-        volume_set[label_suffixes[4]],
-        label_suffixes[4],
-        config=config_db,
-        anatomy=["skull"],
-    )
-    volume = set_labels(
-        volume,
-        volume_set[label_suffixes[0]],
-        label_suffixes[0],
-        config=config_db,
-        anatomy=["trachea"],
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[7]], label_suffixes[7], config=config_db
-    )
-    volume = set_labels(
-        volume, volume_set[label_suffixes[8]], label_suffixes[8], config=config_db
-    )
-    volume = set_labels(
-        volume,
-        volume_set[label_suffixes[5]],
-        label_suffixes[5],
-        config=config_db,
-        anatomy=["eyes"],
-    )
-
-    save_volume(template_path, volume)
+    save_volume(template_path, volume, flag)
 
     return None
 
@@ -137,7 +141,7 @@ def load_volume(nifti_path: Path) -> npt.NDArray:
         Image volume
     """
 
-    nifti = nib.load(nifti_path)
+    nifti = nib.load(nifti_path.resolve())
 
     volume = nifti.get_fdata()
 
@@ -181,7 +185,7 @@ def create_volume(template_path: Path) -> nib.nifti1.Nifti1Image:
     return new_volume
 
 
-def save_volume(template_path: Path, volume) -> nib.nifti1.Nifti1Image:
+def save_volume(template_path: Path, volume, flag) -> nib.nifti1.Nifti1Image:
     """
     Creates a new NIfTI volume based on a template, with all voxel values set to zero.
 
@@ -196,14 +200,22 @@ def save_volume(template_path: Path, volume) -> nib.nifti1.Nifti1Image:
         New NIfTI image with the same shape and affine as the template, but with all voxel values set to zero.
     """
 
+    if flag == "mergebrain":
+        template_path= Path(str(template_path.resolve()).replace('-air_tissue.nii.gz', '-brain_dseg.nii.gz'))
+    
+
     nifti = nib.load(template_path)
 
     new_volume = nib.Nifti1Image(
         volume.astype(np.int8), nifti.affine, nifti.header, dtype=np.int8
     )
-    nib.save(new_volume, "sub-unfErssm010_T1w_label-all.nii.gz")
-    # nib.save(new_volume,'sub-unfErssm010_T1w_label-brain_dseg-merged.nii.gz')
-    # nib.save(new_volume, 'sub-unfErssm010_T1w_label-brain_dseg.nii.gz')
+
+    if flag == "mergebrain":
+        save_path =  Path(str(template_path.resolve()).replace('-brain_dseg.nii.gz', '-brainonly_merged.nii.gz'))
+    else:
+        save_path = Path(str(template_path.resolve()).replace('-air_tissue.nii.gz', '-all.nii.gz'))
+    
+    nib.save(new_volume, save_path)
 
     return None
 
@@ -284,26 +296,47 @@ def set_labels(volume, labels, suffix, config=None, anatomy=None) -> str:
     return volume
 
 
-def main(bids_subject_dir=None, flag=None, config=Path("config/whole-body-labels.tsv")) -> None:
+def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv")) -> None:
+    """
+    Main function to merge labels for a subject.
 
-    if bids_subject_dir is None:
-        t1w = Path("data/sub-unfErssm010_T1w.nii.gz")
+    Parameters
+    ----------
+    bids_subject_dir : str
+        Path to the subject directory in BIDS format.
+    flag : str, optional
+        Optional flag argument. If set to 'mergebrain', the brain labels will be merged. Otherwise, the merged-brain labels will be used.
+    config : Path, optional
+        Path to the configuration file.
+
+    Returns
+    -------
+    None
+    """
+
+    bids_subject_dir = Path(bids_subject_dir)
+    subject = str(bids_subject_dir.stem)
+    t1w_path = bids_subject_dir / 'anat' / (subject + '_T1w.nii.gz')
+    t1w = Path(t1w_path)
 
     t1w_stem = Path(t1w.stem).stem
+    bids_dir = bids_subject_dir.parent
+    derivatives_dir = bids_dir / "derivatives" / subject / "anat"
 
-    air_tissue = Path("data/" + t1w_stem + "_label-air_tissue.nii.gz")
-    canal = Path("data/" + t1w_stem + "_label-canal_seg.nii.gz")
-    spine = Path("data/" + t1w_stem + "_T1w_label-spine_dseg.nii.gz")
+    air_tissue = derivatives_dir / (t1w_stem + "_label-air_tissue.nii.gz")
+    canal = derivatives_dir /  (t1w_stem + "_label-canal_seg.nii.gz")
+    spine = derivatives_dir /  (t1w_stem + "_label-spine_dseg.nii.gz")
+
     if flag == "mergebrain":
-        brain = Path("data/" + t1w_stem + "_label-brain_dseg.nii.gz")
+        brain = derivatives_dir /  (t1w_stem + "_label-brain_dseg.nii.gz")
     else:
-        brain = Path("data/" + t1w_stem + "_label-brainonly_merged.nii.gz")
-    skin = Path("data/" + t1w_stem + "_label-skin.nii.gz")
-    skull = Path("data/" + t1w_stem + "_label-skull.nii.gz")
-    eyes = Path("data/" + t1w_stem + "_label-eyes.nii.gz")
-    sinus = Path("data/" + t1w_stem + "_label-sinus.nii.gz")
-    earcanal = Path("data/" + t1w_stem + "_label-earcanal.nii.gz")
-    body = Path("data/" + t1w_stem + "_label-body.nii.gz")
+        brain = derivatives_dir /  (t1w_stem + "_label-brain.nii.gz")
+    skin = derivatives_dir / (t1w_stem + "_label-skin.nii.gz")
+    skull = derivatives_dir /  (t1w_stem + "_label-skull.nii.gz")
+    eyes = derivatives_dir /  (t1w_stem + "_label-eyes.nii.gz")
+    sinus = derivatives_dir /  (t1w_stem + "_label-sinus.nii.gz")
+    earcanal = derivatives_dir / (t1w_stem + "_label-earcanal.nii.gz")
+    body = derivatives_dir /  (t1w_stem + "_label-body.nii.gz")
 
     list_labels = [
         air_tissue,
@@ -324,4 +357,20 @@ def main(bids_subject_dir=None, flag=None, config=Path("config/whole-body-labels
 
 
 if __name__ == "__main__":
-    main()
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description="Process subject directory path and other arguments.")
+    
+    # Add the -s argument to the parser
+    parser.add_argument("-s", "--subject_dir", required=True, help="Path to the subject directory in BIDS format")
+    
+    # Add the -f argument to the parser
+    parser.add_argument("-f", "--flag", required=False, help="Optional flag argument. If set to 'mergebrain', the brain labels will be merged. Otherwise, the merged-brain labels will be used.")
+    
+    # Add the -c argument to the parser
+    parser.add_argument("-c", "--config", required=False, default="config/whole-body-labels.tsv", help="Path to the configuration file")
+    
+    # Parse the arguments
+    args = parser.parse_args()
+    
+    # Call the main function with parsed arguments
+    main(bids_subject_dir=args.subject_dir, flag=args.flag, config=Path(args.config))
