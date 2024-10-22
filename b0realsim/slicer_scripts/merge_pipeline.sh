@@ -58,21 +58,22 @@ smooth_outputs[skull]="-skull.nii.gz"
 # Take the previous 7 commands and run them in in a loop, using the respective save_input and save_output labels set as variables and the keywords
 for keyword in "body" "earcanal" "eyes" "sinus" "skin" "skull"
 do
-  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/save_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_inputs[$keyword]}" -o "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -a "$keyword"
+  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/save_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_inputs[$keyword]}" -o "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -a "$keyword"
 done
 
 # Take the previous 7 commands and run them in in a loop, using the respective save_output and smooth_output labels set as variables and the keywords
 for keyword in "body" "earcanal" "eyes" "sinus" "skull"
 do
-  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/smooth_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -o "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${smooth_outputs[$keyword]}" -a "$keyword" || true
+  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/smooth_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -o "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${smooth_outputs[$keyword]}" -a "$keyword" || true
 done
 
-python b0realsim/merge_labels.py -s ${SUBJECT} -f mergebrain
+
+python ${__dir}/../merge_labels.py -s ${SUBJECT} -f mergebrain
 
 # Smooth brain
 for keyword in "brain"
 do
-  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/smooth_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -o "$BIDS_DIR/derivatives/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${smooth_outputs[$keyword]}" -a "$keyword" || true
+  /Applications/Slicer.app/Contents/MacOS/Slicer --python-script ${__dir}/smooth_segment.py -m "$SUBJECT/anat/${SUBJECT_ID}_T1w.nii.gz" -s "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${save_outputs[$keyword]}" -o "$BIDS_DIR/derivatives/labels/$SUBJECT_ID/anat/${SUBJECT_ID}_T1w_label${smooth_outputs[$keyword]}" -a "$keyword" || true
 done
 
-python b0realsim/merge_labels.py -s ${SUBJECT}
+python ${__dir}/../merge_labels.py -s ${SUBJECT}

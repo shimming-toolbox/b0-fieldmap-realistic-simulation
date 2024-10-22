@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+import os
 
 from typing import List
 import numpy.typing as npt
@@ -235,7 +236,7 @@ def get_label_suffix(nifti_path: Path) -> str:
         The suffix of the BIDS label filename.
     """
 
-    file_str = str(nifti_path)
+    file_str = str(nifti_path.name)
     file_suffix = file_str.split("label", 1)[1]
 
     return file_suffix
@@ -321,22 +322,22 @@ def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv"
 
     t1w_stem = Path(t1w.stem).stem
     bids_dir = bids_subject_dir.parent
-    derivatives_dir = bids_dir / "derivatives" / subject / "anat"
+    derivatives_dir = bids_dir / "derivatives" / 'labels' / subject / "anat"
 
     air_tissue = derivatives_dir / (t1w_stem + "_label-air_tissue.nii.gz")
     canal = derivatives_dir /  (t1w_stem + "_label-canal_seg.nii.gz")
-    spine = derivatives_dir /  (t1w_stem + "_label-spine_dseg.nii.gz")
+    spine = derivatives_dir / (t1w_stem + "_label-spine_dseg.nii.gz")
 
     if flag == "mergebrain":
-        brain = derivatives_dir /  (t1w_stem + "_label-brain_dseg.nii.gz")
+        brain = derivatives_dir / (t1w_stem + "_label-brain_dseg.nii.gz")
     else:
-        brain = derivatives_dir /  (t1w_stem + "_label-brain.nii.gz")
-    skin = derivatives_dir / (t1w_stem + "_label-skin.nii.gz")
-    skull = derivatives_dir /  (t1w_stem + "_label-skull.nii.gz")
+        brain = derivatives_dir / (t1w_stem + "_label-brain.nii.gz")
+    skin = derivatives_dir /  (t1w_stem + "_label-skin.nii.gz")
+    skull = derivatives_dir / (t1w_stem + "_label-skull.nii.gz")
     eyes = derivatives_dir /  (t1w_stem + "_label-eyes.nii.gz")
     sinus = derivatives_dir /  (t1w_stem + "_label-sinus.nii.gz")
-    earcanal = derivatives_dir / (t1w_stem + "_label-earcanal.nii.gz")
-    body = derivatives_dir /  (t1w_stem + "_label-body.nii.gz")
+    earcanal = derivatives_dir /  (t1w_stem + "_label-earcanal.nii.gz")
+    body = derivatives_dir / (t1w_stem + "_label-body.nii.gz")
 
     list_labels = [
         air_tissue,
@@ -357,6 +358,8 @@ def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv"
 
 
 if __name__ == "__main__":
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+
     # Create an argument parser
     parser = argparse.ArgumentParser(description="Process subject directory path and other arguments.")
     
@@ -367,7 +370,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--flag", required=False, help="Optional flag argument. If set to 'mergebrain', the brain labels will be merged. Otherwise, the merged-brain labels will be used.")
     
     # Add the -c argument to the parser
-    parser.add_argument("-c", "--config", required=False, default="config/whole-body-labels.tsv", help="Path to the configuration file")
+    parser.add_argument("-c", "--config", required=False, default=Path(current_directory) / "../config/whole-body-labels.tsv", help="Path to the configuration file")
     
     # Parse the arguments
     args = parser.parse_args()
