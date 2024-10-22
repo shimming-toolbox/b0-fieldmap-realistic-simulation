@@ -46,6 +46,7 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
     volume_set = {}
 
     for idx, label_path in enumerate(list_labels):
+        
         volume_set[label_suffixes[idx]] = load_volume(label_path)
 
     print("Loaded the volumes for all the following files:")
@@ -75,18 +76,23 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
         volume = set_labels(
             volume, volume_set[label_suffixes[9]], label_suffixes[9], config=config_db
         )
+        
         volume = set_labels(
             volume, volume_set[label_suffixes[3]], label_suffixes[3], config=config_db, anatomy=["brain-merged"]
         )
+        
         volume = set_labels(
             volume, volume_set[label_suffixes[2]], label_suffixes[2], config=config_db
         )
-        volume = set_labels(
-            volume, volume_set[label_suffixes[6]], label_suffixes[6], config=config_db
-        )
+        
+        #volume = set_labels(
+        #    volume, volume_set[label_suffixes[6]], label_suffixes[6], config=config_db
+        #)
+        
         volume = set_labels(
             volume, volume_set[label_suffixes[1]], label_suffixes[1], config=config_db
         )
+        
         volume = set_labels(
             volume,
             volume_set[label_suffixes[0]],
@@ -94,6 +100,7 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
             config=config_db,
             anatomy=["lung left", "lung right"],
         )
+        
         volume = set_labels(
             volume,
             volume_set[label_suffixes[4]],
@@ -101,6 +108,7 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
             config=config_db,
             anatomy=["skull"],
         )
+        
         volume = set_labels(
             volume,
             volume_set[label_suffixes[0]],
@@ -108,12 +116,15 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
             config=config_db,
             anatomy=["trachea"],
         )
+        
         volume = set_labels(
             volume, volume_set[label_suffixes[7]], label_suffixes[7], config=config_db
         )
+        
         volume = set_labels(
             volume, volume_set[label_suffixes[8]], label_suffixes[8], config=config_db
         )
+        
         volume = set_labels(
             volume,
             volume_set[label_suffixes[5]],
@@ -327,7 +338,7 @@ def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv"
     air_tissue = derivatives_dir / (t1w_stem + "_label-air_tissue.nii.gz")
     canal = derivatives_dir /  (t1w_stem + "_label-canal_seg.nii.gz")
     spine = derivatives_dir / (t1w_stem + "_label-spine_dseg.nii.gz")
-
+    
     if flag == "mergebrain":
         brain = derivatives_dir / (t1w_stem + "_label-brain_dseg.nii.gz")
     else:

@@ -106,6 +106,8 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         islands(segmentEditorWidget)
         # Smoothing
         gaussian(segmentEditorWidget, 2)
+        # Grow the segment
+        grow(segmentEditorWidget, 1)
     elif anatomy == "eye":
         # Remove small islands
         islands(segmentEditorWidget)
