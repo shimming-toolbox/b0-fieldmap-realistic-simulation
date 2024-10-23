@@ -1,0 +1,3 @@
+nibabel
+numpy<2
+tissue2mrprop @ git+https://github.com/shimming-toolbox/tissue-to-MRproperty.git@mb/importable
