@@ -96,8 +96,9 @@ for subject in subjects:
 
     b0map = b0map.get_fdata()
 
-    b0map = b0map*127.74
-    mean_b0 = -2.5*127.74
+    b0map = b0map*123.2
+    #mean_b0 = -2.5*123.2
+    mean_b0 = 0
 
     print(f'{subject}: {b0map.shape}')
 
@@ -158,7 +159,7 @@ ax.xaxis.set_visible(False)
 ax.yaxis.set_visible(False)
 
 # Add colorbar
-norm = Normalize(vmin=-2.5*127.74, vmax=2.5*127.74)
+norm = Normalize(vmin=-5*127.74, vmax=5*127.74)
 sm = ScalarMappable(norm=norm, cmap=cmap)
 sm.set_array([])
 fig.colorbar(sm, ax=ax)

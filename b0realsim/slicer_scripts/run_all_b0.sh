@@ -22,7 +22,7 @@ echo $subjects > subjects.txt
 SHORT_BIDS_DIR=whole-spine
 SCRIPT_NAME="compute_fieldmap"
 SCRIPT_SOURCE="https://github.com/shimming-toolbox/susceptibility-to-fieldmap-fft"
-SCRIPT_COMMIT_HASH="665a8d4ce2b4bfa5336199e650423104fe64baa5"
+SCRIPT_COMMIT_HASH="d9f785b082fb145d547ff03ae53f23f1564ccc38"
 PADDING=50
 PADDING_OPTION="b0SimISMRM"
 
@@ -43,6 +43,6 @@ do
     JSON_STR=$(printf "$JSON_FMT" "$USER" "\$(date  +\"%Y-%m-%d %H:%M:%S\")\\" "$SCRIPT_NAME" "$SCRIPT_SOURCE" "$SCRIPT_COMMIT_HASH" "$INPUT_FILE" "$PADDING" "$COMMAND")
 
     # Write the command to the script file
-    echo "echo \"$JSON_STR\" > $OUTPUT_SIDECAR" >> compute_fieldmaps.sh
+    echo "echo \"$JSON_STR\" >| $OUTPUT_SIDECAR" >> compute_fieldmaps.sh
 done
 
