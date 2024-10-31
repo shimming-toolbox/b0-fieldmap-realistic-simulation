@@ -2,7 +2,9 @@ import slicer
 import os
 import click
 from pathlib import Path
-
+import json
+import datetime
+import git
 
 @click.command()
 @click.option("-m", "--main_volume_path", required=True, help="Path to the main volume")
@@ -83,6 +85,12 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
     if anatomy == "body":
         # Grow the segment
         grow(segmentEditorWidget, 3)
+
+        processing_steps = {
+            "grow": {
+                "margin_mm": 3,
+            },
+        }
     elif anatomy == "skull":
         # Remove small islands
         islands(segmentEditorWidget)
@@ -94,6 +102,26 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         close(segmentEditorWidget, 15)
         # Shrink the segment
         shrink(segmentEditorWidget, 2)
+
+        processing_steps = {
+            "islands": {
+                "operation": "REMOVE_SMALL_ISLANDS",
+            },
+            "smoothing": {
+                "method": "MORPHOLOGICAL_CLOSING",
+                "kernel_size_mm": 15,
+            },
+            "grow": {
+                "margin_mm": 3,
+            },
+            "smoothing": {
+                "method": "MORPHOLOGICAL_CLOSING",
+                "kernel_size_mm": 15,
+            },
+            "shrink": {
+                "margin_mm": 2,
+            },
+        }
     elif anatomy == "sinus":
         # Remove small islands
         islands(segmentEditorWidget)
@@ -101,6 +129,19 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         gaussian(segmentEditorWidget, 2)
         # Shrink the segment
         shrink(segmentEditorWidget, 2)
+
+        processing_steps = {
+            "islands": {
+                "operation": "REMOVE_SMALL_ISLANDS",
+            },
+            "smoothing": {
+                "method": "GAUSSIAN",
+                "kernel_size_mm": 2,
+            },
+            "shrink": {
+                "margin_mm": 2,
+            },
+        }
     elif anatomy == "brain":
         # Remove small islands
         islands(segmentEditorWidget)
@@ -108,6 +149,19 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         gaussian(segmentEditorWidget, 2)
         # Grow the segment
         grow(segmentEditorWidget, 1)
+
+        processing_steps = {
+            "islands": {
+                "operation": "REMOVE_SMALL_ISLANDS",
+            },
+            "smoothing": {
+                "method": "GAUSSIAN",
+                "kernel_size_mm": 2,
+            },
+            "grow": {
+                "margin_mm": 1,
+            },
+        }
     elif anatomy == "eye":
         # Remove small islands
         islands(segmentEditorWidget)
@@ -119,6 +173,26 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         close(segmentEditorWidget, 15)
         # Shrink the segment
         shrink(segmentEditorWidget, 3)
+
+        processing_steps = {
+            "islands": {
+                "operation": "REMOVE_SMALL_ISLANDS",
+            },
+            "smoothing": {
+                "method": "MORPHOLOGICAL_CLOSING",
+                "kernel_size_mm": 15,
+            },
+            "grow": {
+                "margin_mm": 3,
+            },
+            "smoothing": {
+                "method": "MORPHOLOGICAL_CLOSING",
+                "kernel_size_mm": 15,
+            },
+            "shrink": {
+                "margin_mm": 3,
+            },
+        }
     elif anatomy == "earcanal":
         # Remove small islands
         islands(segmentEditorWidget)
@@ -126,6 +200,19 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         gaussian(segmentEditorWidget, 2)
         # Shrink the segment
         shrink(segmentEditorWidget, 1)
+
+        processing_steps = {
+            "islands": {
+                "operation": "REMOVE_SMALL_ISLANDS",
+            },
+            "smoothing": {
+                "method": "GAUSSIAN",
+                "kernel_size_mm": 2,
+            },
+            "shrink": {
+                "margin_mm": 1,
+            },
+        }
 
     # List of segments to keep
     segmentsToKeep = [segment_id]  # Body
@@ -161,6 +248,33 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
     )
     slicer.util.saveNode(labelmapVolumeNode, str(Path(output_path).resolve()))
 
+    # JSON sidecar
+
+    repo = git.Repo(search_parent_directories=True)
+
+
+    bids_sidecar = {}
+    bids_sidecar['author'] = os.getenv('USER')
+    bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
+    bids_sidecar['script source'] = repo.remotes.origin.url
+    bids_sidecar['script commit hash'] = repo.head.object.hexsha
+    bids_sidecar["input file"] = str(Path(segmentation_path).resolve())
+    bids_sidecar["label"] = {}
+    bids_sidecar["label"]["anatomy"] = anatomy
+    bids_sidecar["label"]["value"] = 1
+    bids_sidecar["label"]["input file value"] = int(segment_id.split("_")[1])
+    bids_sidecar["label"]["processing steps"] = processing_steps
+    bids_sidecar['command'] = "/Applications/Slicer.app/Contents/MacOS/Slicer --python-script " + bids_sidecar['script'] + " -m " + main_volume_path + " -s " + segmentation_path + " -o " + output_path + " -a " + anatomy
+    bids_sidecar["slicer version"] = str(slicer.app.majorVersion) + "." + str(slicer.app.minorVersion)
+    bids_sidecar["slicer repository revision"] = str(slicer.app.repositoryRevision)
+
+    json_file = str(Path(output_path).resolve()).replace(".nii.gz", ".json")
+    if os.path.exists(json_file):
+        os.remove(json_file)
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)
 
 def grow(segmentEditorWidget, marginmm):
 
