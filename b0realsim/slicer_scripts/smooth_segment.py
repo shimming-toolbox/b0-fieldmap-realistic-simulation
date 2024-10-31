@@ -162,7 +162,7 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
                 "margin_mm": 1,
             },
         }
-    elif anatomy == "eye":
+    elif anatomy == "eyes":
         # Remove small islands
         islands(segmentEditorWidget)
         # Smoothing

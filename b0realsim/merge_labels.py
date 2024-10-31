@@ -9,8 +9,11 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
+import json
+import datetime
+import git
 
-def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
+def merge_labels(list_labels: List[Path], config_file=None, flag=None, bids_subject_dir=None) -> None:
     """
     Merges multiple tissue label volumes into a single volume, optionally remapping labels based on a configuration file.
 
@@ -71,7 +74,7 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
         )
     else:
         # Set labels using predefined order
-        # Order is set to: body, brain, spine, skin, canal, lungs, skull, trachea, sinus,
+        # Order is set to: body, brain, spine, canal, lungs, skull, trachea, sinus,
         # earcanal, and then eyes.
         volume = set_labels(
             volume, volume_set[label_suffixes[9]], label_suffixes[9], config=config_db
@@ -84,10 +87,6 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
         volume = set_labels(
             volume, volume_set[label_suffixes[2]], label_suffixes[2], config=config_db
         )
-        
-        #volume = set_labels(
-        #    volume, volume_set[label_suffixes[6]], label_suffixes[6], config=config_db
-        #)
         
         volume = set_labels(
             volume, volume_set[label_suffixes[1]], label_suffixes[1], config=config_db
@@ -133,7 +132,7 @@ def merge_labels(list_labels: List[Path], config_file=None, flag=None) -> None:
             anatomy=["eyes"],
         )
 
-    save_volume(template_path, volume, flag)
+    save_volume(template_path, volume, flag, list_labels, bids_subject_dir)
 
     return None
 
@@ -197,7 +196,7 @@ def create_volume(template_path: Path) -> nib.nifti1.Nifti1Image:
     return new_volume
 
 
-def save_volume(template_path: Path, volume, flag) -> nib.nifti1.Nifti1Image:
+def save_volume(template_path: Path, volume, flag, list_labels, bids_subject_dir) -> nib.nifti1.Nifti1Image:
     """
     Creates a new NIfTI volume based on a template, with all voxel values set to zero.
 
@@ -228,6 +227,71 @@ def save_volume(template_path: Path, volume, flag) -> nib.nifti1.Nifti1Image:
         save_path = Path(str(template_path.resolve()).replace('-air_tissue.nii.gz', '-all.nii.gz'))
     
     nib.save(new_volume, save_path)
+
+
+    # JSON sidecar
+
+    repo = git.Repo(search_parent_directories=True)
+
+
+    bids_sidecar = {}
+    bids_sidecar['author'] = os.getenv('USER')
+    bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
+    bids_sidecar['script source'] = repo.remotes.origin.url
+    bids_sidecar['script commit hash'] = repo.head.object.hexsha
+    if flag == "mergebrain":
+        bids_sidecar["input file"] = str(Path(list_labels[3]).resolve())
+    else:
+        # For each file in list_labels, convert from Path to string and resolve the path
+        list_labels = [str(Path(label).resolve()) for label in list_labels]
+
+        bids_sidecar["input files"] = list_labels
+
+    if flag == "mergebrain":
+        bids_sidecar["label"] = {}
+        bids_sidecar["label"]["anatomy"] = 'brain'
+        bids_sidecar["label"]["value"] = 56
+    else:
+        bids_sidecar['anatomy'] = {}
+        bids_sidecar['anatomy']['background'] = {}
+        bids_sidecar['anatomy']['background']['label'] = 0
+        bids_sidecar['anatomy']['body'] = {}
+        bids_sidecar['anatomy']['body']['label'] = '1'
+        bids_sidecar['anatomy']['sinus'] = {}
+        bids_sidecar['anatomy']['sinus'] ['label'] = 2
+        bids_sidecar['anatomy']['earcanal'] = {}
+        bids_sidecar['anatomy']['earcanal'] ['label'] = 3
+        bids_sidecar['anatomy']['trachea'] = {}
+        bids_sidecar['anatomy']['trachea']['label'] = 4
+        bids_sidecar['anatomy']['rightlung'] = {}
+        bids_sidecar['anatomy']['rightlung']['label'] = 5
+        bids_sidecar['anatomy']['leftlung'] = {}
+        bids_sidecar['anatomy']['leftlung']['label'] = 6
+        bids_sidecar['anatomy']['brain'] = {}
+        bids_sidecar['anatomy']['brain']['label'] = 56
+        bids_sidecar['anatomy']['eyes'] = {}
+        bids_sidecar['anatomy']['eyes']['label'] = 60
+        bids_sidecar['anatomy']['skull'] = {}
+        bids_sidecar['anatomy']['skull']['label'] = 91
+        bids_sidecar['anatomy']['verterbae'] = {}
+        bids_sidecar['anatomy']['verterbae']['label'] = 92
+        bids_sidecar['anatomy']['disks'] = {}
+        bids_sidecar['anatomy']['disks']['label'] = 93
+        bids_sidecar['anatomy']['canal'] = {}
+        bids_sidecar['anatomy']['canal']['label'] = 100
+
+    if flag == "mergebrain":
+        bids_sidecar['command'] = 'python merge_labels.py -s ' +  str(bids_subject_dir) + ' -f mergebrain '
+    else:
+        bids_sidecar['command'] = 'python merge_labels.py -s ' +  str(bids_subject_dir)
+
+    json_file = str(Path(save_path).resolve()).replace(".nii.gz", ".json")
+    if os.path.exists(json_file):
+        os.remove(json_file)
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)
 
     return None
 
@@ -339,7 +403,7 @@ def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv"
     canal = derivatives_dir /  (t1w_stem + "_label-canal_seg.nii.gz")
     spine = derivatives_dir / (t1w_stem + "_label-spine_dseg.nii.gz")
     
-    if flag == "mergebrain":
+    if flag == "mergebrain":  
         brain = derivatives_dir / (t1w_stem + "_label-brain_dseg.nii.gz")
     else:
         brain = derivatives_dir / (t1w_stem + "_label-brain.nii.gz")
@@ -363,7 +427,7 @@ def main(bids_subject_dir, flag=None, config=Path("config/whole-body-labels.tsv"
         body,
     ]
 
-    merge_labels(list_labels, config, flag)
+    merge_labels(list_labels, config, flag, bids_subject_dir)
 
     return None
 
