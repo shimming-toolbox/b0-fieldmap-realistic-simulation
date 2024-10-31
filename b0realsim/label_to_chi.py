@@ -109,8 +109,6 @@ def label_to_chi(bids_subject_dir):
     json_file = bids_subject_dir / ".." / 'derivatives' / subject / 'anat' / (subject + '_T1w-chi.json')
     if os.path.exists(json_file):
         os.remove(json_file)
-    
-    # Create the json file
 
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)

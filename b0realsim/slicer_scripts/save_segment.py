@@ -2,6 +2,9 @@ import slicer
 import os
 import click
 from pathlib import Path
+import json
+import datetime
+import git
 
 @click.command()
 @click.option("-m", "--main_volume_path", required=True, help="Path to the main volume")
@@ -105,6 +108,32 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
 
     slicer.util.saveNode(labelmapVolumeNode, str(Path(output_path).resolve()))
 
+    # JSON sidecar
+
+    repo = git.Repo(search_parent_directories=True)
+
+
+    bids_sidecar = {}
+    bids_sidecar['author'] = os.getenv('USER')
+    bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
+    bids_sidecar['script source'] = repo.remotes.origin.url
+    bids_sidecar['script commit hash'] = repo.head.object.hexsha
+    bids_sidecar["input file"] = str(Path(segmentation_path).resolve())
+    bids_sidecar["label"] = {}
+    bids_sidecar["label"]["anatomy"] = anatomy
+    bids_sidecar["label"]["value"] = 1
+    bids_sidecar["label"]["input file value"] = int(segment_id.split("_")[1])
+    bids_sidecar['command'] = "/Applications/Slicer.app/Contents/MacOS/Slicer --python-script " + bids_sidecar['script'] + " -m " + main_volume_path + " -s " + segmentation_path + " -o " + output_path + " -a " + anatomy
+    bids_sidecar["slicer version"] = str(slicer.app.majorVersion) + "." + str(slicer.app.minorVersion)
+    bids_sidecar["slicer repository revision"] = str(slicer.app.repositoryRevision)
+
+    json_file = str(Path(output_path).resolve()).replace(".nii.gz", ".json")
+    if os.path.exists(json_file):
+        os.remove(json_file)
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     save_segment()
