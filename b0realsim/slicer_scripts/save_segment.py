@@ -30,6 +30,7 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
 
     if anatomy == "body":
         segment_id = "Segment_1"
+        # Add all segments to Segment 1 to fill in cavities
     elif anatomy == "skull":
         segment_id = "Segment_165"
     elif anatomy == "sinus":
@@ -72,6 +73,24 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     # Define the segment to select
     segmentEditorNode.SetSelectedSegmentID(segment_id)
 
+    if anatomy == "body":
+        # Keep largest island
+
+        # Smooth gaussian 5 or 10 mm, might need to adjust the grow step
+        
+        
+        # Grow the segment
+        union(segmentEditorWidget, ["Segment_2", "Segment_3", "Segment_4", "Segment_5", "Segment_6"])
+    
+        processing_steps = {
+            0: {
+                "union": {
+                    "merged_segments": ["Segment_2", "Segment_3", "Segment_4", "Segment_5", "Segment_6"],
+                },
+            }
+        }
+    else:
+        processing_steps = None
 
     # List of segments to keep
     segmentsToKeep = [segment_id]  # Sinus
@@ -124,6 +143,7 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     bids_sidecar["label"]["anatomy"] = anatomy
     bids_sidecar["label"]["value"] = 1
     bids_sidecar["label"]["input file value"] = int(segment_id.split("_")[1])
+    bids_sidecar["label"]["processing steps"] = processing_steps
     bids_sidecar['command'] = "/Applications/Slicer.app/Contents/MacOS/Slicer --python-script " + bids_sidecar['script'] + " -m " + main_volume_path + " -s " + segmentation_path + " -o " + output_path + " -a " + anatomy
     bids_sidecar["slicer version"] = str(slicer.app.majorVersion) + "." + str(slicer.app.minorVersion)
     bids_sidecar["slicer repository revision"] = str(slicer.app.repositoryRevision)
@@ -134,6 +154,22 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
 
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)
+
+def union(segmentEditorWidget, id_list):
+
+    print("Starting segment union operation")
+    # Union
+    segmentEditorWidget.setActiveEffectByName("Logical operators")
+    effect = segmentEditorWidget.activeEffect()
+    effect.setParameter("Operation", "UNION")
+
+    for segment_id in id_list:
+        effect.setParameter("ModifierSegmentID", segment_id)
+        effect.self().onApply()
+    print("Finished segment union operation")
+
+    return segmentEditorWidget
+
 
 if __name__ == "__main__":
     save_segment()
