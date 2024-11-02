@@ -84,15 +84,29 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
 
     if anatomy == "body":
         # Keep largest island
+        largest_island(segmentEditorWidget)
 
         # Smooth gaussian 5 or 10 mm, might need to adjust the grow step
-        
+        gaussian(segmentEditorWidget, 3)
         
         # Grow the segment
         grow(segmentEditorWidget, 3)
     
         processing_steps = {
             0: {
+                "islands": {
+                    "operation": "KEEP_LARGEST_ISLAND",
+                },
+            },
+
+            1: {
+                "smoothing": {
+                    "method": "GAUSSIAN",
+                    "kernel_size_mm": 3,
+                },
+            },
+
+            2: {
                 "grow": {
                     "margin_mm": 3,
                 },
@@ -379,6 +393,19 @@ def islands(segmentEditorWidget):
 
     return segmentEditorWidget
 
+def largest_island(segmentEditorWidget):
+
+    print("Starting keep largest island operation")
+    # Islands
+
+    segmentEditorWidget.setActiveEffectByName("Islands")
+    effect = segmentEditorWidget.activeEffect()
+    effect.setParameter("Operation", "KEEP_LARGEST_ISLAND")
+    effect.self().onApply()
+
+    print("Finished islands operation")
+
+    return segmentEditorWidget
 
 def close(segmentEditorWidget, kernelmm):
 
