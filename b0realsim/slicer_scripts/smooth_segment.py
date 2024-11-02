@@ -83,13 +83,20 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
     segmentEditorNode.SetSelectedSegmentID(segment_id)
 
     if anatomy == "body":
+        # Keep largest island
+
+        # Smooth gaussian 5 or 10 mm, might need to adjust the grow step
+        
+        
         # Grow the segment
         grow(segmentEditorWidget, 3)
-
+    
         processing_steps = {
-            "grow": {
-                "margin_mm": 3,
-            },
+            0: {
+                "grow": {
+                    "margin_mm": 3,
+                },
+            }
         }
     elif anatomy == "skull":
         # Remove small islands
@@ -104,22 +111,36 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         shrink(segmentEditorWidget, 2)
 
         processing_steps = {
-            "islands": {
-                "operation": "REMOVE_SMALL_ISLANDS",
+            0: {
+                "islands": {
+                    "operation": "REMOVE_SMALL_ISLANDS",
+                },
             },
-            "smoothing": {
-                "method": "MORPHOLOGICAL_CLOSING",
-                "kernel_size_mm": 15,
+
+            1: {
+                "smoothing": {
+                    "method": "MORPHOLOGICAL_CLOSING",
+                    "kernel_size_mm": 15,
+                },
             },
-            "grow": {
-                "margin_mm": 3,
+
+            2: {
+                "grow": {
+                    "margin_mm": 3,
+                },
             },
-            "smoothing": {
-                "method": "MORPHOLOGICAL_CLOSING",
-                "kernel_size_mm": 15,
+
+            3: {
+                "smoothing": {
+                    "method": "MORPHOLOGICAL_CLOSING",
+                    "kernel_size_mm": 15,
+                },
             },
-            "shrink": {
-                "margin_mm": 2,
+
+            4: {
+                "shrink": {
+                    "margin_mm": 2,
+                },
             },
         }
     elif anatomy == "sinus":
@@ -131,15 +152,23 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         shrink(segmentEditorWidget, 2)
 
         processing_steps = {
-            "islands": {
-                "operation": "REMOVE_SMALL_ISLANDS",
+            0: {
+                "islands": {
+                    "operation": "REMOVE_SMALL_ISLANDS",
+                },
             },
-            "smoothing": {
-                "method": "GAUSSIAN",
-                "kernel_size_mm": 2,
+
+            1: {
+                "smoothing": {
+                    "method": "GAUSSIAN",
+                    "kernel_size_mm": 2,
+                },
             },
-            "shrink": {
-                "margin_mm": 2,
+
+            2: {      
+                "shrink": {
+                    "margin_mm": 2,
+                },
             },
         }
     elif anatomy == "brain":
@@ -151,15 +180,23 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         grow(segmentEditorWidget, 1)
 
         processing_steps = {
-            "islands": {
-                "operation": "REMOVE_SMALL_ISLANDS",
+            0: {
+                "islands": {
+                    "operation": "REMOVE_SMALL_ISLANDS",
+                },
             },
-            "smoothing": {
-                "method": "GAUSSIAN",
-                "kernel_size_mm": 2,
+
+            1: {
+                "smoothing": {
+                    "method": "GAUSSIAN",
+                    "kernel_size_mm": 2,
+                },
             },
-            "grow": {
-                "margin_mm": 1,
+
+            2: {
+                "grow": {
+                    "margin_mm": 1,
+                },
             },
         }
     elif anatomy == "eyes":
@@ -175,22 +212,36 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         shrink(segmentEditorWidget, 3)
 
         processing_steps = {
-            "islands": {
-                "operation": "REMOVE_SMALL_ISLANDS",
+            0: {
+                "islands": {
+                    "operation": "REMOVE_SMALL_ISLANDS",
+                },
             },
-            "smoothing": {
-                "method": "MORPHOLOGICAL_CLOSING",
-                "kernel_size_mm": 15,
+
+            1: {
+                "smoothing": {
+                    "method": "MORPHOLOGICAL_CLOSING",
+                    "kernel_size_mm": 15,
+                },
             },
-            "grow": {
-                "margin_mm": 3,
+
+            2: {
+                "grow": {
+                    "margin_mm": 3,
+                },
             },
-            "smoothing": {
-                "method": "MORPHOLOGICAL_CLOSING",
-                "kernel_size_mm": 15,
+
+            3: {
+                "smoothing": {
+                    "method": "MORPHOLOGICAL_CLOSING",
+                    "kernel_size_mm": 15,
+                },
             },
-            "shrink": {
-                "margin_mm": 3,
+
+            4: {
+                "shrink": {
+                    "margin_mm": 3,
+                },
             },
         }
     elif anatomy == "earcanal":
@@ -202,15 +253,23 @@ def smoothing_procedure(main_volume_path, segmentation_path, output_path, anatom
         shrink(segmentEditorWidget, 1)
 
         processing_steps = {
-            "islands": {
-                "operation": "REMOVE_SMALL_ISLANDS",
+            0: {
+                "islands": {
+                    "operation": "REMOVE_SMALL_ISLANDS",
+                },
             },
-            "smoothing": {
-                "method": "GAUSSIAN",
-                "kernel_size_mm": 2,
+
+            1: {
+                "smoothing": {
+                    "method": "GAUSSIAN",
+                    "kernel_size_mm": 2,
+                },
             },
-            "shrink": {
-                "margin_mm": 1,
+
+            2: {
+                "shrink": {
+                    "margin_mm": 1,
+                },
             },
         }
 
