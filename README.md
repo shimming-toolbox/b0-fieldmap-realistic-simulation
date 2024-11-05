@@ -26,9 +26,13 @@ Link to OpenNeuro BIDS dataset to be provided soon.
 # Installation
 
 ## Python depedencies
-In a new virtual environment (recommended),
+In a new virtual environment (recommended), install this repository:
 
-`pip install -e requirements.txt`
+```shell
+git clone https://github.com/shimming-toolbox/b0-fieldmap-realistic-simulation.git
+cd b0-fieldmap-realistic-simulation
+pip install -e requirements.txt
+```
 
 Install the susceptibility-to-fieldmap project,
 
