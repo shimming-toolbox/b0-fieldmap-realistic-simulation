@@ -1,6 +1,23 @@
 # B0 fieldmap realistic simulation
 
-Generation of B0 fieldmap based on anatomical MRIs of mutliple adult subjects. The fieldmaps are generated from the segmented tissues and assignment of susceptibility values. 
+Generation of B0 fieldmap based on anatomical MRIs of 60 adult subjects. The fieldmaps are generated from the segmented tissues and assignment of susceptibility values. 
+
+**Pipeline**
+
+<img width="1148" alt="Pipeline" src="https://github.com/user-attachments/assets/8bf04642-0ab2-460c-8893-5d2d94490a13">
+
+<br/><br/>
+
+**3D Render of segmentations**
+
+<img width="600" alt="3D Render of segmentations" src="https://github.com/user-attachments/assets/5062eb6c-e2a3-42ad-936e-26f402caa1b8">
+
+<br/><br/>
+
+**Sagittal mosaic of simulated B0 maps**
+
+<img width="800" alt="3D Render of segmentations" src="https://github.com/user-attachments/assets/6bd82576-3a10-40bf-b965-64a10b8f53d3">
+<br/><br/>
 
 # Dataset
 
