@@ -6,6 +6,7 @@ import json
 import datetime
 import git
 
+
 @click.command()
 @click.option("-m", "--main_volume_path", required=True, help="Path to the main volume")
 @click.option(
@@ -45,7 +46,9 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
         segment_id = "Segment_258"
 
     # Load the main volume and segmentation
-    main_filename = str(Path(main_volume_path).stem) + '.gz' # Get the filename from the path
+    main_filename = (
+        str(Path(main_volume_path).stem) + ".gz"
+    )  # Get the filename from the path
 
     # Remove the extension to
     main_filename_without_extension = Path(Path(main_filename).stem).stem
@@ -69,7 +72,7 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
     segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
     segmentEditorWidget.setSegmentationNode(segmentation_node)
     segmentEditorWidget.setMasterVolumeNode(masterVolumeNode)
-    
+
     # Define the segment to select
     segmentEditorNode.SetSelectedSegmentID(segment_id)
 
@@ -77,15 +80,23 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
         # Keep largest island
 
         # Smooth gaussian 5 or 10 mm, might need to adjust the grow step
-        
-        
+
         # Grow the segment
-        union(segmentEditorWidget, ["Segment_2", "Segment_3", "Segment_4", "Segment_5", "Segment_6"])
-    
+        union(
+            segmentEditorWidget,
+            ["Segment_2", "Segment_3", "Segment_4", "Segment_5", "Segment_6"],
+        )
+
         processing_steps = {
             0: {
                 "union": {
-                    "merged_segments": ["Segment_2", "Segment_3", "Segment_4", "Segment_5", "Segment_6"],
+                    "merged_segments": [
+                        "Segment_2",
+                        "Segment_3",
+                        "Segment_4",
+                        "Segment_5",
+                        "Segment_6",
+                    ],
                 },
             }
         }
@@ -131,29 +142,42 @@ def save_segment(main_volume_path, segmentation_path, output_path, anatomy):
 
     repo = git.Repo(search_parent_directories=True)
 
-
     bids_sidecar = {}
-    bids_sidecar['author'] = os.getenv('USER')
-    bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
-    bids_sidecar['script source'] = repo.remotes.origin.url
-    bids_sidecar['script commit hash'] = repo.head.object.hexsha
+    bids_sidecar["author"] = os.getenv("USER")
+    bids_sidecar["date"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bids_sidecar["script"] = str(Path(os.path.abspath(__file__)).resolve())
+    bids_sidecar["script source"] = repo.remotes.origin.url
+    bids_sidecar["script commit hash"] = repo.head.object.hexsha
     bids_sidecar["input file"] = str(Path(segmentation_path).resolve())
     bids_sidecar["label"] = {}
     bids_sidecar["label"]["anatomy"] = anatomy
     bids_sidecar["label"]["value"] = 1
     bids_sidecar["label"]["input file value"] = int(segment_id.split("_")[1])
     bids_sidecar["label"]["processing steps"] = processing_steps
-    bids_sidecar['command'] = "/Applications/Slicer.app/Contents/MacOS/Slicer --python-script " + bids_sidecar['script'] + " -m " + main_volume_path + " -s " + segmentation_path + " -o " + output_path + " -a " + anatomy
-    bids_sidecar["slicer version"] = str(slicer.app.majorVersion) + "." + str(slicer.app.minorVersion)
+    bids_sidecar["command"] = (
+        "/Applications/Slicer.app/Contents/MacOS/Slicer --python-script "
+        + bids_sidecar["script"]
+        + " -m "
+        + main_volume_path
+        + " -s "
+        + segmentation_path
+        + " -o "
+        + output_path
+        + " -a "
+        + anatomy
+    )
+    bids_sidecar["slicer version"] = (
+        str(slicer.app.majorVersion) + "." + str(slicer.app.minorVersion)
+    )
     bids_sidecar["slicer repository revision"] = str(slicer.app.repositoryRevision)
 
     json_file = str(Path(output_path).resolve()).replace(".nii.gz", ".json")
     if os.path.exists(json_file):
         os.remove(json_file)
 
-    with open(json_file, 'w', encoding='utf-8') as f:
+    with open(json_file, "w", encoding="utf-8") as f:
         json.dump(bids_sidecar, f, ensure_ascii=False, indent=4)
+
 
 def union(segmentEditorWidget, id_list):
 
