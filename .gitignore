@@ -1,0 +1,11 @@
+.DS_store
+data/
+bids/
+*.nii
+*.nii.gz
+*foo*
+arxv/
+compute_fieldmaps.sh
+run_*.sh
+subjects.txt
+subject-mosaic.png
