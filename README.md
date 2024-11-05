@@ -2,12 +2,13 @@
 
 Generation of B0 fieldmap based on anatomical MRIs of mutliple adult subjects. The fieldmaps are generated from the segmented tissues and assignment of susceptibility values. 
 
+# Dataset
+
+Link to OpenNeuro BIDS dataset to be provided soon.
+
 # Installation
 
-## Prequesites
-
-
-### Python depedencies
+## Python depedencies
 In a new virtual environment (recommended),
 
 `pip install -e requirements.txt`
@@ -20,7 +21,7 @@ cd susceptibility-to-fieldmap-fft
 git checkout d9f785b082fb145d547ff03ae53f23f1564ccc38
 pip install -e .
 ```
-### Slicer3D
+## Slicer3D
 
 Install via their website, https://www.slicer.org
 
@@ -90,6 +91,12 @@ $BIDS_DIR/derivatives/$SUBJECT/anat/
 
 **B0 maps**
 $BIDS_DIR/derivatives/$SUBJECT/fmap/
+
+## Plot saggital mosaic of B0 maps
+
+`python b0realsim/visualization/plot_mosaic.py -b $BIDS_DIR` - runtime ~3 minutes
+
+Output: **subject-mosaic.png**
 
 ## Fetch additional information
 To compute the age/weight/height statistics for the subjects,
