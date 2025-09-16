@@ -53,6 +53,8 @@ import slicer
 slicer.util.pip_install('click')
 ```
 
+Update [this script](https://github.com/shimming-toolbox/b0-fieldmap-realistic-simulation/blob/main/b0realsim/slicer_scripts/merge_pipeline.sh) with your Slicer path if you are not running on a Mac, or if you installed Slicer in a different location
+
 # Usage
 
 ## Main pipeline
