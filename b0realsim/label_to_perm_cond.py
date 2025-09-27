@@ -13,7 +13,7 @@ def label_to_perm_cond(bids_subject_dir):
 
     bids_subject_dir = Path(bids_subject_dir)
     subject = str(bids_subject_dir.stem)
-    merged_labels_path = bids_subject_dir / ".." / 'derivatives'  /'labels' / subject / 'anat' / (subject + '_T1w_label-all.nii.gz')
+    merged_labels_path = bids_subject_dir / ".." / 'derivatives' / 'labels' / subject / 'anat' / (subject + '_T1w_label-all.nii.gz')
 
     # Check if the directory  bids_subject_dir / ".." / 'derivatives' / subject / exists and if no, create it
 
@@ -25,8 +25,11 @@ def label_to_perm_cond(bids_subject_dir):
     if not os.path.exists(bids_subject_dir / ".." / 'derivatives' / subject / 'anat' ):
         os.makedirs(bids_subject_dir / ".." / 'derivatives' / subject / 'anat' )
 
-    perm7t_file = bids_subject_dir / ".." / 'derivatives' / 'elecsim' /subject / 'anat' / (subject + '_T1w-perm7T.nii.gz')
-    chi7t_file = bids_subject_dir / ".." / 'derivatives' / 'elecsim' / subject / 'anat' / (subject + '_T1w-_cond7T.nii.gz')
+    elecsim_anat_dir = bids_subject_dir / ".." / 'derivatives' / 'elecsim' / subject / 'anat'
+    os.makedirs(elecsim_anat_dir, exist_ok=True)
+
+    perm7t_file = bids_subject_dir / ".." / 'derivatives' / 'elecsim' / subject / 'anat' / (subject + '_T1w-perm7T.nii.gz')
+    chi7t_file = bids_subject_dir / ".." / 'derivatives' / 'elecsim' / subject / 'anat' / (subject + '_T1w-cond7T.nii.gz')
 
     run_tissue2MR(
         in_file = str(merged_labels_path.resolve()),
@@ -49,7 +52,7 @@ def label_to_perm_cond(bids_subject_dir):
 
 
     bids_sidecar = {}
-    bids_sidecar['author'] = os.getenv('USER')
+    bids_sidecar['author'] = os.getenv('USERNAME')
     bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
     bids_sidecar['script source'] = repo.remotes.origin.url
@@ -84,4 +87,4 @@ if __name__ == "__main__":
 
     # Parse the arguments
     args = parser.parse_args()
-    label_to_chi(args.bids_subject_dir)
+    label_to_perm_cond(args.bids_subject_dir)

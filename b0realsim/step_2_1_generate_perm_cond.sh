@@ -16,8 +16,21 @@ while getopts ":b:" opt; do
   esac
 done
 
+# Handle Windows-style paths like E:/... or C:/...
+if [[ "$BIDS_DIR" =~ ^[A-Z]:/ ]]; then
+    drive=$(echo $BIDS_DIR | cut -c1 | tr 'A-Z' 'a-z')
+    path=$(echo $BIDS_DIR | cut -c3-)
+    BIDS_DIR="/cygdrive/$drive/$path"
+fi
+
 # Print the bids directory to the screen
 echo "BIDS directory: $BIDS_DIR"
+
+# Check if BIDS_DIR exists
+if [ ! -d "$BIDS_DIR" ]; then
+    echo "[ERROR] BIDS directory not found: $BIDS_DIR"
+    exit 1
+fi
 
 # If subjects.txt exists, remove it and create a new one
 if [ -f subjects.txt ]; then
@@ -37,22 +50,40 @@ echo $SUBJECTS
 # Create a list of the subjects
 echo $SUBJECTS > subjects.txt
 
-# Get the path for the directory of this script
+# Get script directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# Echo the directory to the screen
-echo "Directory: $DIR"
+# Convert DIR to Windows path for Windows Python
+WIN_DIR=$(echo "$DIR" | sed 's|/cygdrive/\([a-z]\)/|\U\1:/|')
 
-# If run_2_compute_chimaps.sh exists, remove it and create a new one
-if [ -f run_2_compute_chimaps.sh ]; then
-    rm run_2_compute_chimaps.sh
-    touch run_2_compute_chimaps.sh
-fi
-
-
-# For each subject, write to a file running the command (bash /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/b0-fieldmap-realistic-simulation/b0realsim/slicer_scripts/merge_pipeline.sh -s $bids_dir/$subject) for each subject, one subject per line
 for subject in $SUBJECTS
 do
-    echo "python $DIR/label_to_perm_cond.py -s $BIDS_DIR/$subject" >> run_2_compute_chimaps.sh
+    # Skip empty entries from excluded subjects
+    if [ -z "$subject" ]; then
+        continue
+    fi
+
+    echo "[INFO] Processing $subject"
+
+    # Convert BIDS_DIR to Windows path
+    WIN_BIDS_DIR=$(echo "$BIDS_DIR" | sed 's|/cygdrive/\([a-z]\)/|\U\1:/|')
+
+    # Check if subject folder exists
+    if [ ! -d "$WIN_BIDS_DIR/$subject" ]; then
+        echo "[WARNING] Subject folder not found: $WIN_BIDS_DIR/$subject, skipping..."
+        continue
+    fi
+
+    # Check if Python script exists
+    if [ ! -f "$WIN_DIR/label_to_perm_cond.py" ]; then
+        echo "[ERROR] Python script not found: $WIN_DIR/label_to_perm_cond.py"
+        exit 1
+    fi
+
+    # Run Python to generate perm/cond maps
+    "C:/Users/Admin/Miniconda3/python.exe" "$WIN_DIR/label_to_perm_cond.py" -s "$WIN_BIDS_DIR/$subject"
 done
+
+echo "[INFO] All subjects processed."
+
 
