@@ -231,9 +231,7 @@ def save_volume(
 
     nifti = nib.load(template_path)
 
-    new_volume = nib.Nifti1Image(
-        volume.astype(np.int8), nifti.affine, nifti.header, dtype=np.int8
-    )
+    new_volume = nib.Nifti1Image(volume.astype(np.int8), nifti.affine, nifti.header, dtype=np.int8)
 
     if flag == "mergebrain":
         save_path = Path(
