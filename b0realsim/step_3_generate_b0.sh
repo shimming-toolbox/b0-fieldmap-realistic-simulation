@@ -48,6 +48,7 @@ PADDING_OPTION="b0SimISMRM"
 # For each subject, write to a file running the command (compute_fieldmap -i /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/data/data.neuro.polymtl.ca/whole-spine/derivatives/sub-amuAL/anat/sub-amuAL_T1w-chi.nii.gz -o /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/data/data.neuro.polymtl.ca/whole-spine/derivatives/sub-amuALT/fmap/sub-amuALT_T1w_fmap_b0-sim.nii.gz -p 50 -m constant) for each subject, one subject per line
 for subject in $SUBJECTS
 do
+    echo "DEFINING COMMAND FOR SUBJECT: $subject"
     INPUT_FILE="${BIDS_DIR}/derivatives/${subject}/anat/${subject}_T1w-chi.nii.gz"
     OUTPUT_FILE="${BIDS_DIR}/derivatives/${subject}/fmap/${subject}_T1w_fmap_b0-sim.nii.gz"
     OUTPUT_SIDECAR="${BIDS_DIR}/derivatives/${subject}/fmap/${subject}_T1w_fmap_b0-sim.json"

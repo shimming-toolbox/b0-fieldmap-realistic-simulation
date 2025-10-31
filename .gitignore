@@ -9,3 +9,5 @@ compute_fieldmaps.sh
 run_*.sh
 subjects.txt
 subject-mosaic.png
+working/
+susceptibility-to-fieldmap-fft/
