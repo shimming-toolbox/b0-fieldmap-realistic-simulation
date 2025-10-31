@@ -3,18 +3,33 @@
 # Find all the subjects in the bids directory and create a list of them
 # This is useful for the batch processing of subjects
 
-# Parse the command line arguments -b --bids_dir
-while getopts ":b:" opt; do
-  case ${opt} in
-    b )
-      BIDS_DIR=$OPTARG
+# Parse the command line arguments -b --bids_dir & shimming toolbox options
+SHIM_ARGS=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -b|--bids-dir)
+      BIDS_DIR="$2"
+      shift 2
       ;;
-    \? )
-      echo "Usage: cmd [-b] bids_dir"
-      exit 1
+    -h|--help)
+      echo "Usage: $0 -b <bids_dir> [shimming_toolbox_options...]"
+      echo "Example: $0 -b /path/to/bids --scanner-coil-order 0,1,2 --slices volume"
+      exit 0
+      ;;
+    *)
+      # Collect all other arguments as shimming options
+      SHIM_ARGS="$SHIM_ARGS $1"
+      shift
       ;;
   esac
 done
+
+# Still keep the validation for missing required argument
+if [ -z "$BIDS_DIR" ]; then
+    echo "Error: BIDS directory is required"
+    echo "Usage: $0 -b <bids_dir> [shimming_toolbox_options...]"
+    exit 1
+fi
 
 # Print the bids directory to the screen
 echo "BIDS directory: $BIDS_DIR"
@@ -52,6 +67,6 @@ fi
 # For each subject, write to a file running the command (bash /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/b0-fieldmap-realistic-simulation/b0realsim/slicer_scripts/merge_pipeline.sh -s $bids_dir/$subject) for each subject, one subject per line
 for subject in $SUBJECTS
 do
-    echo "st_b0shim dynamic --fmap ${BIDS_DIR}derivatives/b0shim_brain/$subject/${subject}_T1w_fmap_b0-sim_head.nii.gz --anat ${BIDS_DIR}derivatives/b0shim_brain/$subject/${subject}_T1w_head.nii.gz --mask ${BIDS_DIR}derivatives/b0shim_brain/$subject/${subject}_mask_brain.nii.gz --scanner-coil-order "0,1,2" -o ${BIDS_DIR}derivatives/b0shim_brain/$subject/output-2ndorder/ --slices volume" >> run_4_shim.sh
+    echo "st_b0shim dynamic --fmap ${BIDS_DIR}/derivatives/b0shim_brain/$subject/${subject}_T1w_fmap_b0-sim_head.nii.gz --anat ${BIDS_DIR}/derivatives/b0shim_brain/$subject/${subject}_T1w_head.nii.gz --mask ${BIDS_DIR}/derivatives/b0shim_brain/$subject/${subject}_mask_brain.nii.gz -o ${BIDS_DIR}/derivatives/b0shim_brain/$subject/output-2ndorder/ $SHIM_ARGS" >> run_4_shim.sh
 done
 
