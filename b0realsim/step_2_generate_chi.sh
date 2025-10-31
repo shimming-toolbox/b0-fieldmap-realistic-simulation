@@ -49,7 +49,6 @@ if [ -f run_2_compute_chimaps.sh ]; then
     touch run_2_compute_chimaps.sh
 fi
 
-
 # For each subject, write to a file running the command (bash /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/b0-fieldmap-realistic-simulation/b0realsim/slicer_scripts/merge_pipeline.sh -s $bids_dir/$subject) for each subject, one subject per line
 for subject in $SUBJECTS
 do
