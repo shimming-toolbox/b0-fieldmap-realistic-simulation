@@ -24,7 +24,7 @@ def main(bids_dir):
     # initiate a list of numpy arrays to store the data without knowing prior shape
     fulldata = []
     fullmask = []
-
+    mean_b0s = []
     for subject in subjects:
         print(subject)
         label = nib.load(
@@ -76,7 +76,7 @@ def main(bids_dir):
         b0map = b0map * 123.2
 
         mean_b0 = np.ma.masked_array(b0map, np.logical_not(mask)).mean()
-
+        mean_b0s.append(mean_b0)
         print(f"{subject}: {b0map.shape}")
 
         # reset
