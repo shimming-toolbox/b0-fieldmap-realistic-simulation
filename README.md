@@ -83,7 +83,7 @@ Output: **run_1_smooth.sh**
 **Step 2**: Labels to chi
 Then, generate the script that will, for each subject, map the labels to their chi values.
 
-`./b0realsim/step_2_generate_chi.sh -b $BIDS_DIR`]
+`./b0realsim/step_2_generate_chi.sh -b $BIDS_DIR`
 
 Output: **run_2_compute_chimaps.sh**
 
