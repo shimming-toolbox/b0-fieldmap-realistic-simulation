@@ -44,6 +44,8 @@ pip install -e .
 ```
 ## Slicer3D
 
+> **_NOTE:_** This pipeline has only been tested using Slicer3D version 5.6.2, and may need to be updated for compatibility with more recent versions. Please open an issue if you encounter a problem.
+
 Install via their website, https://www.slicer.org
 
 Open the application, then navigate to the Python terminal (see Python "snake" logo in the top toolbar) and run:
