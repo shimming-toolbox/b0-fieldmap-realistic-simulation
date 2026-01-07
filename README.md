@@ -67,7 +67,9 @@ where $SCRIPT is the *.sh filename for that script.
 
 For convenience, we recommend you set the variable `BIDS_DIR` in your shell to the datasets BIDS directory,
 
-`BIDS_DIR = /path/to/bids/dir`
+`BIDS_DIR=/path/to/bids/dir`
+
+> **_NOTE:_**  There must be no spaces between the variable name/value and equal sign
 
 This way, you can copy-paste the commands below directly.
 
