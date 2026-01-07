@@ -31,7 +31,7 @@ In a new virtual environment (recommended), install this repository:
 ```shell
 git clone https://github.com/shimming-toolbox/b0-fieldmap-realistic-simulation.git
 cd b0-fieldmap-realistic-simulation
-pip install -e requirements.txt
+pip install -r requirements.txt
 ```
 
 Install the susceptibility-to-fieldmap project,
