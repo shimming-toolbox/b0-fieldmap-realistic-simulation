@@ -20,7 +20,11 @@ def main(bids_dir):
 
     for subject in subjects:
         print(subject)
-        label = nib.load(bids_dir / 'derivatives' / 'labels' / subject / 'anat' / (subject+'_T1w_label-all.nii.gz'))
+        try:
+            label = nib.load(bids_dir / 'derivatives' / 'labels' / subject / 'anat' / (subject+'_T1w_label-all.nii.gz'))
+        except:
+            #skip this for loop iteration
+            continue
         data = label.get_fdata()
         data[data!=4]=0
         data = np.ndarray.sum(data,2)
@@ -124,7 +128,7 @@ def main(bids_dir):
     plt.imshow(np.rot90(masked), alpha=1,cmap = 'Greys')
 
     # Add colorbar
-    norm = Normalize(vmin=-3*123.2, vmax=3*123.2)
+    norm = Normalize(vmin=-7*123.2, vmax=7*123.2)
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
     #fig.colorbar(sm, ax=ax)
