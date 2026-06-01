@@ -16,7 +16,7 @@ Generation of B0 fieldmap based on anatomical MRIs of 60 adult subjects. The fie
 
 **Sagittal mosaic of simulated B0 maps**
 
-<img width="800" alt="3D Render of segmentations" src="https://github.com/user-attachments/assets/6bd82576-3a10-40bf-b965-64a10b8f53d3">
+<img width="800" alt="3D Render of segmentations" src="https://github.com/user-attachments/assets/c00df1b4-77ec-42f6-9ded-f153fee17844">
 <br/><br/>
 
 # Dataset
