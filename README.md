@@ -21,9 +21,9 @@ Generation of B0 fieldmap based on anatomical MRIs of 60 adult subjects. The fie
 
 # Dataset
 
-The whole-spine data is hosted on OpenNeuro: https://openneuro.org/datasets/ds005616/versions/1.0.1
+The whole-spine data is hosted on OpenNeuro: https://openneuro.org/datasets/ds005616/versions/1.0.2
 
-Currently, this repo is compatible with versions 1.0.1 and under (later versions have a different folder structure, and this repo will be updated to accomodate this).
+Currently, this repo is compatible with versions 1.0.2 and under (later versions have a different folder structure, and this repo will be updated to accomodate this).
 
 
 # Installation
