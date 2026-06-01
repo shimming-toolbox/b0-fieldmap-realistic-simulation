@@ -21,7 +21,10 @@ Generation of B0 fieldmap based on anatomical MRIs of 60 adult subjects. The fie
 
 # Dataset
 
-Link to OpenNeuro BIDS dataset to be provided soon.
+The whole-spine data is hosted on OpenNeuro: https://openneuro.org/datasets/ds005616/versions/1.0.1
+
+Currently, this repo is compatible with versions 1.0.1 and under (later versions have a different folder structure, and this repo will be updated to accomodate this).
+
 
 # Installation
 
@@ -31,7 +34,7 @@ In a new virtual environment (recommended), install this repository:
 ```shell
 git clone https://github.com/shimming-toolbox/b0-fieldmap-realistic-simulation.git
 cd b0-fieldmap-realistic-simulation
-pip install -e requirements.txt
+pip install -r requirements.txt
 ```
 
 Install the susceptibility-to-fieldmap project,
@@ -43,6 +46,8 @@ git checkout d9f785b082fb145d547ff03ae53f23f1564ccc38
 pip install -e .
 ```
 ## Slicer3D
+
+> **_NOTE:_** This pipeline has only been tested using Slicer3D version 5.6.2, and may need to be updated for compatibility with more recent versions. Please open an issue if you encounter a problem.
 
 Install via their website, https://www.slicer.org
 
@@ -67,7 +72,9 @@ where $SCRIPT is the *.sh filename for that script.
 
 For convenience, we recommend you set the variable `BIDS_DIR` in your shell to the datasets BIDS directory,
 
-`BIDS_DIR = /path/to/bids/dir`
+`BIDS_DIR=/path/to/bids/dir`
+
+> **_NOTE:_**  There must be no spaces between the variable name/value and equal sign
 
 This way, you can copy-paste the commands below directly.
 
@@ -83,7 +90,7 @@ Output: **run_1_smooth.sh**
 **Step 2**: Labels to chi
 Then, generate the script that will, for each subject, map the labels to their chi values.
 
-`./b0realsim/step_2_generate_chi.sh -b $BIDS_DIR`]
+`./b0realsim/step_2_generate_chi.sh -b $BIDS_DIR`
 
 Output: **run_2_compute_chimaps.sh**
 
