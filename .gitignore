@@ -9,3 +9,4 @@ compute_fieldmaps.sh
 run_*.sh
 subjects.txt
 subject-mosaic.png
+b0realsim/step_4_shim_old.sh

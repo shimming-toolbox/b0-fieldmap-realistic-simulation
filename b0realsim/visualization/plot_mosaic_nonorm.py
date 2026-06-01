@@ -20,11 +20,8 @@ def main(bids_dir):
 
     for subject in subjects:
         print(subject)
-        try:
-            label = nib.load(bids_dir / 'derivatives' / 'labels' / subject / 'anat' / (subject+'_T1w_label-all.nii.gz'))
-        except:
-            #skip this for loop iteration
-            continue
+        label = nib.load(bids_dir / 'derivatives' / 'labels' / subject / 'anat' / (subject+'_T1w_label-all.nii.gz'))
+
         data = label.get_fdata()
         data[data!=4]=0
         data = np.ndarray.sum(data,2)
@@ -47,12 +44,13 @@ def main(bids_dir):
 
         b0map = nib.load(bids_dir / 'derivatives' / subject / 'fmap' / (subject+'_T1w_fmap_b0-sim.nii.gz'))
 
-        b0map = b0map.get_fdata()
+        b0map = b0map.get_fdata().astype(np.float32)
 
-        # Siemens operating MRI frequency is ~123.2 MHz
-        b0map = b0map*123.2
+
+        # Print mean B0 value within the mask
 
         mean_b0 = np.ma.masked_array(b0map,np.logical_not(mask)).mean()    
+        print(f'{subject}: {mean_b0}')
 
         print(f'{subject}: {b0map.shape}')
 
@@ -64,7 +62,7 @@ def main(bids_dir):
         mask[mask>0]=1
         mask = np.ndarray.astype(mask, int)
 
-        fulldata.append(np.squeeze(b0map[centerline,:,:])-mean_b0)
+        fulldata.append(np.squeeze(b0map[centerline,:,:]))
         fullmask.append(np.squeeze(mask[centerline,:,:]))
 
         del b0map, mask
@@ -107,7 +105,7 @@ def main(bids_dir):
     cmap = plt.get_cmap('bwr')
 
     # Display the image
-    im = ax.imshow(np.rot90(concatenated), cmap=cmap, vmin=-3*123.2, vmax=3*123.2)
+    im = ax.imshow(np.rot90(concatenated), cmap=cmap, vmin=-8, vmax=2)
 
     # Disable ticks and labels on both axes
     ax.tick_params(
@@ -128,7 +126,7 @@ def main(bids_dir):
     plt.imshow(np.rot90(masked), alpha=1,cmap = 'Greys')
 
     # Add colorbar
-    norm = Normalize(vmin=-7*123.2, vmax=7*123.2)
+    norm = Normalize(vmin=-8, vmax=2)
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
     #fig.colorbar(sm, ax=ax)

@@ -56,10 +56,10 @@ do
     echo "$COMMAND" >> run_3_compute_b0maps.sh
 
     # Define the JSON format string
-    JSON_FMT='{\n\t\\\"author\\\":\\\"%s\\\",\n\t\\\"creation date\\\":\\"%s",\n\t\\\"script\\\":\\\"%s\\\",\n\t\\\"script source\\\":\\\"%s\\\",\n\t\\\"script commit hash\\\":\\\"%s\\\",\n\t\\\"input file\\\":\\\"%s\\\",\n\t\\\"padding\\\":%s,\n\t\\\"command\\\":\\\"%s\\\"\n}\n'
+    JSON_FMT='{\n\t\\\"author\\\":\\\"%s\\\",\n\t\\\"creation date\\\":\\\"%s\\\",\n\t\\\"script\\\":\\\"%s\\\",\n\t\\\"script source\\\":\\\"%s\\\",\n\t\\\"script commit hash\\\":\\\"%s\\\",\n\t\\\"input file\\\":\\\"%s\\\",\n\t\\\"padding\\\":%s,\n\t\\\"command\\\":\\\"%s\\\"\n}\n'
 
     # Create the JSON string with variables replaced by their values, except for the date
-    JSON_STR=$(printf "$JSON_FMT" "$USER" "\$(date  +\"%Y-%m-%d %H:%M:%S\")\\" "$SCRIPT_NAME" "$SCRIPT_SOURCE" "$SCRIPT_COMMIT_HASH" "$INPUT_FILE" "$PADDING" "$COMMAND")
+    JSON_STR=$(printf "$JSON_FMT" "$USER" "$(date  +"%Y-%m-%d %H:%M:%S")" "$SCRIPT_NAME" "$SCRIPT_SOURCE" "$SCRIPT_COMMIT_HASH" "$INPUT_FILE" "$PADDING" "$COMMAND")
 
     # Write the command to the script file
     echo "echo \"$JSON_STR\" >| $OUTPUT_SIDECAR" >> run_3_compute_b0maps.sh
