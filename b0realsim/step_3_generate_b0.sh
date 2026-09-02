@@ -41,7 +41,28 @@ echo $subjects > subjects.txt
 SHORT_BIDS_DIR=whole-spine
 SCRIPT_NAME="compute_fieldmap"
 SCRIPT_SOURCE="https://github.com/shimming-toolbox/susceptibility-to-fieldmap-fft"
-SCRIPT_COMMIT_HASH="d9f785b082fb145d547ff03ae53f23f1564ccc38"
+
+# Resolve the commit hash of the susceptibility-to-fieldmap-fft checkout that actually provides
+# compute_fieldmap. This used to be a hardcoded constant, which silently stamped a stale hash into
+# every sidecar regardless of which version was installed.
+PYTHON_BIN=$(command -v python3 || command -v python)
+SCRIPT_REPO_DIR=$("$PYTHON_BIN" -c "import functions, pathlib; print(pathlib.Path(functions.__file__).resolve().parent.parent)" 2>/dev/null)
+
+if [ -z "$SCRIPT_REPO_DIR" ] || ! git -C "$SCRIPT_REPO_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "ERROR: could not locate the susceptibility-to-fieldmap-fft git checkout providing compute_fieldmap." >&2
+    echo "       Install it from a git clone in editable mode (pip install -e .) so provenance can be recorded." >&2
+    exit 1
+fi
+
+SCRIPT_COMMIT_HASH=$(git -C "$SCRIPT_REPO_DIR" rev-parse HEAD)
+
+# Flag uncommitted changes so a sidecar never claims a clean commit that was not what ran.
+if [ -n "$(git -C "$SCRIPT_REPO_DIR" status --porcelain)" ]; then
+    SCRIPT_COMMIT_HASH="${SCRIPT_COMMIT_HASH}-dirty"
+fi
+
+echo "compute_fieldmap provenance: $SCRIPT_REPO_DIR @ $SCRIPT_COMMIT_HASH"
+
 PADDING=50
 PADDING_OPTION="b0SimISMRM"
 
