@@ -113,7 +113,13 @@ def label_to_chi(bids_subject_dir, fullbody=False):
     bids_sidecar['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     bids_sidecar['script'] = str(Path(os.path.abspath(__file__)).resolve())
     bids_sidecar['script source'] = repo.remotes.origin.url
-    bids_sidecar['script commit hash'] = repo.head.object.hexsha
+    # Flag a modified working tree, the way step_3_generate_b0.sh does. Without
+    # this the sidecar claims a clean commit that is not what produced the map -
+    # the same class of error as the hardcoded hash this pipeline used to carry.
+    commit_hash = repo.head.object.hexsha
+    if repo.is_dirty(untracked_files=False):
+        commit_hash += '-dirty'
+    bids_sidecar['script commit hash'] = commit_hash
     bids_sidecar['input file'] = str(merged_labels_path.resolve())
     bids_sidecar['command'] = ('python label_to_chi.py -s ' + str(bids_subject_dir)
                                + (' --fullbody' if fullbody else ''))

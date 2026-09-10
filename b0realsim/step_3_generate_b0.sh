@@ -37,6 +37,15 @@ echo $SUBJECTS
 # Create a list of the subjects
 echo $SUBJECTS > subjects.txt
 
+# If run_3_compute_b0maps.sh exists, remove it and create a new one.
+# Without this the generator APPENDS to the previous run: re-generating would
+# simulate every subject twice, and after a parameter change it would run both
+# the old and the new settings with the last write winning.
+if [ -f run_3_compute_b0maps.sh ]; then
+    rm run_3_compute_b0maps.sh
+    touch run_3_compute_b0maps.sh
+fi
+
 # Get the path for the directory of this script (crop_to_fov.py lives beside it)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -59,8 +68,13 @@ fi
 
 SCRIPT_COMMIT_HASH=$(git -C "$SCRIPT_REPO_DIR" rev-parse HEAD)
 
-# Flag uncommitted changes so a sidecar never claims a clean commit that was not what ran.
-if [ -n "$(git -C "$SCRIPT_REPO_DIR" status --porcelain)" ]; then
+# Flag uncommitted changes so a sidecar never claims a clean commit that was not
+# what ran. Untracked files are deliberately EXCLUDED: they do not change what
+# the code does, and they produce false positives - e.g. macOS AppleDouble "._*"
+# files travel inside a tarball and would otherwise mark a clean checkout dirty.
+# This must stay consistent with label_to_chi.py, which uses
+# repo.is_dirty(untracked_files=False).
+if ! git -C "$SCRIPT_REPO_DIR" diff --quiet HEAD 2>/dev/null; then
     SCRIPT_COMMIT_HASH="${SCRIPT_COMMIT_HASH}-dirty"
 fi
 

@@ -22,7 +22,6 @@ def main(bids_dir):
         for x in bids_dir.iterdir()
         if x.is_dir() and x.name.startswith("sub-")
     ]
-    breakpoint()
     # Remove sub-unfErssm001 and sub-unfErssm021 from the list of subjects
     subjects = [
         x for x in subjects if x != "sub-unfErssm001" and x != "sub-unfErssm021"
