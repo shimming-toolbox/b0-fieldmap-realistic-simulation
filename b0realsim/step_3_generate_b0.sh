@@ -35,7 +35,10 @@ echo "Subjects found:"
 echo $SUBJECTS
 
 # Create a list of the subjects
-echo $subjects > subjects.txt
+echo $SUBJECTS > subjects.txt
+
+# Get the path for the directory of this script (crop_to_fov.py lives beside it)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Define the variables
 SHORT_BIDS_DIR=whole-spine
@@ -63,8 +66,22 @@ fi
 
 echo "compute_fieldmap provenance: $SCRIPT_REPO_DIR @ $SCRIPT_COMMIT_HASH"
 
-PADDING=50
-PADDING_OPTION="b0SimISMRM"
+# r1 revision: the object is now finite and enclosed in air (stage 1b), so pad
+# with AIR to R=2 on every face instead of replicating tissue off the edges.
+# The old setting was PADDING=50 / PADDING_OPTION="b0SimISMRM", which extended
+# tissue below and air above, making the DFT see an infinite lattice of bodies.
+# Overridable from the environment so the run driver can set them without
+# editing this file: e.g. WORKERS=4 ./step_3_generate_b0.sh -b $BIDS_DIR
+ZEROFILL="${ZEROFILL:-2}"
+PAD_VALUE="${PAD_VALUE:-0.35}"
+DTYPE="${DTYPE:-float32}"
+# FFT threads per subject. -1 grabs every core, which is right for one job at a
+# time and wrong when the driver runs several concurrently; the driver overrides
+# this via the generated script or by editing here.
+WORKERS="${WORKERS:--1}"
+# Canvas fieldmaps are ~1.2 GB each: 72 GB across 60 subjects, against 6.6 GB
+# cropped. Discarded by default; set KEEP_CANVAS=1 for the QC subset.
+if [ "${KEEP_CANVAS:-0}" = "1" ]; then KEEP_CANVAS_FLAG=""; else KEEP_CANVAS_FLAG=" --discard-canvas"; fi
 
 # For each subject, write to a file running the command (compute_fieldmap -i /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/data/data.neuro.polymtl.ca/whole-spine/derivatives/sub-amuAL/anat/sub-amuAL_T1w-chi.nii.gz -o /Users/mathieuboudreau/neuropoly/projects/shimming-toolbox/data/data.neuro.polymtl.ca/whole-spine/derivatives/sub-amuALT/fmap/sub-amuALT_T1w_fmap_b0-sim.nii.gz -p 50 -m constant) for each subject, one subject per line
 for subject in $SUBJECTS
@@ -72,15 +89,22 @@ do
     INPUT_FILE="${BIDS_DIR}/derivatives/${subject}/anat/${subject}_T1w-chi.nii.gz"
     OUTPUT_FILE="${BIDS_DIR}/derivatives/${subject}/fmap/${subject}_T1w_fmap_b0-sim.nii.gz"
     OUTPUT_SIDECAR="${BIDS_DIR}/derivatives/${subject}/fmap/${subject}_T1w_fmap_b0-sim.json"
-    COMMAND="compute_fieldmap -i $INPUT_FILE -o ${OUTPUT_FILE} -b $PADDING -m $PADDING_OPTION"
+    # compute_fieldmap returns the shape it was given, which after stage 1b is the
+    # whole canvas (~13x the acquired FOV, ~1.2 GB). Simulate on the canvas, then
+    # crop back to the acquired grid that everything downstream expects.
+    CANVAS_FILE="${BIDS_DIR}/derivatives/${subject}/fmap/${subject}_T1w_fmap_b0-sim_canvas.nii.gz"
+    FULLBODY_META="${BIDS_DIR}/derivatives/fullbody/${subject}/anat/${subject}_T1w_fullbody_label-all.json"
+    COMMAND="compute_fieldmap -i $INPUT_FILE -o ${CANVAS_FILE} -r $ZEROFILL --pad-value $PAD_VALUE --dtype $DTYPE --workers $WORKERS"
+    CROP_COMMAND="python $DIR/crop_to_fov.py --fieldmap ${CANVAS_FILE} --meta ${FULLBODY_META} --out ${OUTPUT_FILE}${KEEP_CANVAS_FLAG}"
 
     echo "$COMMAND" >> run_3_compute_b0maps.sh
+    echo "$CROP_COMMAND" >> run_3_compute_b0maps.sh
 
     # Define the JSON format string
-    JSON_FMT='{\n\t\\\"author\\\":\\\"%s\\\",\n\t\\\"creation date\\\":\\\"%s\\\",\n\t\\\"script\\\":\\\"%s\\\",\n\t\\\"script source\\\":\\\"%s\\\",\n\t\\\"script commit hash\\\":\\\"%s\\\",\n\t\\\"input file\\\":\\\"%s\\\",\n\t\\\"padding\\\":%s,\n\t\\\"command\\\":\\\"%s\\\"\n}\n'
+    JSON_FMT='{\n\t\\\"author\\\":\\\"%s\\\",\n\t\\\"creation date\\\":\\\"%s\\\",\n\t\\\"script\\\":\\\"%s\\\",\n\t\\\"script source\\\":\\\"%s\\\",\n\t\\\"script commit hash\\\":\\\"%s\\\",\n\t\\\"input file\\\":\\\"%s\\\",\n\t\\\"zerofill\\\":%s,\n\t\\\"pad value ppm\\\":%s,\n\t\\\"dtype\\\":\\\"%s\\\",\n\t\\\"cropped to acquired FOV\\\":true,\n\t\\\"command\\\":\\\"%s\\\"\n}\n'
 
     # Create the JSON string with variables replaced by their values, except for the date
-    JSON_STR=$(printf "$JSON_FMT" "$USER" "$(date  +"%Y-%m-%d %H:%M:%S")" "$SCRIPT_NAME" "$SCRIPT_SOURCE" "$SCRIPT_COMMIT_HASH" "$INPUT_FILE" "$PADDING" "$COMMAND")
+    JSON_STR=$(printf "$JSON_FMT" "$USER" "$(date  +"%Y-%m-%d %H:%M:%S")" "$SCRIPT_NAME" "$SCRIPT_SOURCE" "$SCRIPT_COMMIT_HASH" "$INPUT_FILE" "$ZEROFILL" "$PAD_VALUE" "$DTYPE" "$COMMAND")
 
     # Write the command to the script file
     echo "echo \"$JSON_STR\" >| $OUTPUT_SIDECAR" >> run_3_compute_b0maps.sh
