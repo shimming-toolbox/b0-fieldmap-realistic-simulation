@@ -8,34 +8,82 @@ import datetime
 import git
 
 
-def label_to_chi(bids_subject_dir):
+# Label value for material added by the body-extension stage (step 1b). Chosen
+# to sit clear of every published label so the two never collide.
+ADDED_LABEL = 200
+
+# Susceptibility in ppm, keyed by label value.
+#
+# SINGLE SOURCE OF TRUTH. Both the chi mapping and the BIDS sidecar are built
+# from this dict, so a value cannot be changed in one place and missed in the
+# other. Revisiting the lung/trachea/sinus values is reviewer point R2.3; this
+# is the only place that edit needs to happen.
+CHI_LUT = {
+    0: 0.35,      # background (air)
+    1: -9.05,     # body
+    2: -2.0,      # sinus
+    3: -2.0,      # earcanal
+    4: -4.2,      # trachea
+    5: -4.2,      # right lung
+    6: -4.2,      # left lung
+    56: -9.04,    # brain
+    60: -9.05,    # eyes
+    91: -11.0,    # skull
+    92: -11.0,    # vertebrae
+    93: -9.055,   # disks
+    100: -9.055,  # canal
+    ADDED_LABEL: -9.05,   # added mannequin material (body extension, step 1b)
+}
+
+# Sidecar key per label. Spellings match the published r0 sidecars exactly,
+# including "verterbae" - changing them would break comparability with the
+# published dataset.
+LABEL_NAMES = {
+    0: "background",
+    1: "body",
+    2: "sinus",
+    3: "earcanal",
+    4: "trachea",
+    5: "rightlung",
+    6: "leftlung",
+    56: "brain",
+    60: "eyes",
+    91: "skull",
+    92: "verterbae",
+    93: "disks",
+    100: "canal",
+    ADDED_LABEL: "bodyextension",
+}
+
+
+def label_to_chi(bids_subject_dir, fullbody=False):
 
     bids_subject_dir = Path(bids_subject_dir)
     subject = str(bids_subject_dir.stem)
-    merged_labels_path = bids_subject_dir / ".." / 'derivatives' / 'labels' / subject / 'anat' / (subject + '_T1w_label-all.nii.gz')
-    
+
+    if fullbody:
+        merged_labels_path = (bids_subject_dir / ".." / 'derivatives' / 'fullbody' /
+                              subject / 'anat' / (subject + '_T1w_fullbody_label-all.nii.gz'))
+    else:
+        merged_labels_path = (bids_subject_dir / ".." / 'derivatives' / 'labels' /
+                              subject / 'anat' / (subject + '_T1w_label-all.nii.gz'))
 
     vol = nib.load(merged_labels_path.resolve())
-
     vol_data = vol.get_fdata()
 
-    vol_data.astype(np.float64)
+    # Map into a SEPARATE array. The previous version overwrote vol_data in
+    # place with chained comparisons, which only worked because no chi value
+    # collided with a label value - a trap for anyone adding a value later.
+    labels_present = set(np.unique(vol_data).astype(int).tolist())
+    unknown = labels_present - set(CHI_LUT)
+    if unknown:
+        raise SystemExit(f"labels not in CHI_LUT: {sorted(unknown)}")
 
-    vol_data[vol_data==0] = 0.35
-    vol_data[vol_data==1] = -9.05
-    vol_data[vol_data==2] = -2
-    vol_data[vol_data==3] = -2
-    vol_data[vol_data==4] = -4.2
-    vol_data[vol_data==5] = -4.2
-    vol_data[vol_data==6] = -4.2
-    vol_data[vol_data==56] = -9.04
-    vol_data[vol_data==60] = -9.05
-    vol_data[vol_data==91] = -11
-    vol_data[vol_data==92] = -11
-    vol_data[vol_data==93] = -9.055
-    vol_data[vol_data==100] = -9.055
+    chi_data = np.zeros(vol_data.shape, np.float32)
+    for value, chi in CHI_LUT.items():
+        chi_data[vol_data == value] = chi
 
-    new_volume = nib.Nifti1Image(vol_data, vol.affine, vol.header,  dtype=np.float64)
+    new_volume = nib.Nifti1Image(chi_data, vol.affine, vol.header, dtype=np.float32)
 
     # Check if the directory  bids_subject_dir / ".." / 'derivatives' / subject / exists and if no, create it
 
@@ -53,7 +101,11 @@ def label_to_chi(bids_subject_dir):
 
     # Save json
 
-    repo = git.Repo(search_parent_directories=True)
+    # Search from THIS SCRIPT's location, not the caller's cwd. The provenance
+    # we want is the version of this repo that produced the map, and the run
+    # driver's cwd is the bundle root, not the checkout - the previous
+    # cwd-relative form raised InvalidGitRepositoryError there.
+    repo = git.Repo(Path(__file__).resolve().parent, search_parent_directories=True)
 
 
     bids_sidecar = {}
@@ -63,48 +115,13 @@ def label_to_chi(bids_subject_dir):
     bids_sidecar['script source'] = repo.remotes.origin.url
     bids_sidecar['script commit hash'] = repo.head.object.hexsha
     bids_sidecar['input file'] = str(merged_labels_path.resolve())
-    bids_sidecar['command'] = 'python label_to_chi.py -s ' + str(bids_subject_dir)
+    bids_sidecar['command'] = ('python label_to_chi.py -s ' + str(bids_subject_dir)
+                               + (' --fullbody' if fullbody else ''))
 
-    bids_sidecar['anatomy'] = {}
-    bids_sidecar['anatomy']['background'] = {}
-    bids_sidecar['anatomy']['background']['label'] = 0
-    bids_sidecar['anatomy']['background']['chi'] = 0.35
-    bids_sidecar['anatomy']['body'] = {}
-    bids_sidecar['anatomy']['body']['label'] = '1'
-    bids_sidecar['anatomy']['body']['chi'] = -9.05
-    bids_sidecar['anatomy']['sinus'] = {}
-    bids_sidecar['anatomy']['sinus'] ['label'] = 2
-    bids_sidecar['anatomy']['sinus'] ['chi'] = -2
-    bids_sidecar['anatomy']['earcanal'] = {}
-    bids_sidecar['anatomy']['earcanal'] ['label'] = 3
-    bids_sidecar['anatomy']['earcanal']['chi'] = -2
-    bids_sidecar['anatomy']['trachea'] = {}
-    bids_sidecar['anatomy']['trachea']['label'] = 4
-    bids_sidecar['anatomy']['trachea']['chi'] = -4.2
-    bids_sidecar['anatomy']['rightlung'] = {}
-    bids_sidecar['anatomy']['rightlung']['label'] = 5
-    bids_sidecar['anatomy']['rightlung']['chi'] = -4.2
-    bids_sidecar['anatomy']['leftlung'] = {}
-    bids_sidecar['anatomy']['leftlung']['label'] = 6
-    bids_sidecar['anatomy']['leftlung']['chi'] = -4.2
-    bids_sidecar['anatomy']['brain'] = {}
-    bids_sidecar['anatomy']['brain']['label'] = 56
-    bids_sidecar['anatomy']['brain']['chi'] = -9.04
-    bids_sidecar['anatomy']['eyes'] = {}
-    bids_sidecar['anatomy']['eyes']['label'] = 60
-    bids_sidecar['anatomy']['eyes']['chi'] = -9.05
-    bids_sidecar['anatomy']['skull'] = {}
-    bids_sidecar['anatomy']['skull']['label'] = 91
-    bids_sidecar['anatomy']['skull']['chi'] = -11
-    bids_sidecar['anatomy']['verterbae'] = {}
-    bids_sidecar['anatomy']['verterbae']['label'] = 92
-    bids_sidecar['anatomy']['verterbae']['chi'] = -11
-    bids_sidecar['anatomy']['disks'] = {}
-    bids_sidecar['anatomy']['disks']['label'] = 93
-    bids_sidecar['anatomy']['disks']['chi'] = -9.055
-    bids_sidecar['anatomy']['canal'] = {}
-    bids_sidecar['anatomy']['canal']['label'] = 100
-    bids_sidecar['anatomy']['canal']['chi'] = -9.055
+    bids_sidecar['anatomy'] = {
+        LABEL_NAMES[label]: {'label': label, 'chi': chi}
+        for label, chi in CHI_LUT.items()
+    }
 
     json_file = bids_subject_dir / ".." / 'derivatives' / subject / 'anat' / (subject + '_T1w-chi.json')
     if os.path.exists(json_file):
@@ -123,7 +140,11 @@ if __name__ == "__main__":
     
     # Add the -s argument to the parser
     parser.add_argument("-s", "--bids_subject_dir", required=True, help="Path to the subject directory in BIDS format")
+    parser.add_argument("--fullbody", action="store_true",
+                        help="Read the body-extended label volume written by step 1b "
+                             "(derivatives/fullbody/<sub>/anat/<sub>_T1w_fullbody_label-all.nii.gz) "
+                             "instead of the acquired-FOV labels.")
 
     # Parse the arguments
     args = parser.parse_args()
-    label_to_chi(args.bids_subject_dir)
+    label_to_chi(args.bids_subject_dir, fullbody=args.fullbody)
